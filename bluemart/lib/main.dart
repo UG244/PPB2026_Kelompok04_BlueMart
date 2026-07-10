@@ -10,6 +10,9 @@ import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_product_list_screen.dart';
 import 'screens/admin/admin_product_form_screen.dart';
 import 'screens/admin/admin_sales_report_screen.dart';
+import 'screens/admin/admin_coupon_screen.dart';
+import 'screens/admin/admin_payment_screen.dart';
+import 'screens/admin/admin_qris_screen.dart';
 import 'screens/user/user_main_screen.dart';
 import 'screens/user/user_cart_screen.dart';
 import 'screens/user/user_checkout_screen.dart';
@@ -187,6 +190,18 @@ class BlueMartApp extends StatelessWidget {
           case '/barcode-scanner':
             return MaterialPageRoute(
               builder: (_) => const BarcodeScannerScreen(),
+            );
+          case '/admin-coupon':
+            return MaterialPageRoute(
+              builder: (_) => const AdminCouponScreen(),
+            );
+          case '/admin-payment':
+            return MaterialPageRoute(
+              builder: (_) => const AdminPaymentScreen(),
+            );
+          case '/admin-qris':
+            return MaterialPageRoute(
+              builder: (_) => const AdminQrisScreen(),
             );
           case '/map':
             return MaterialPageRoute(builder: (_) => const MapScreen());

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import '../models/supplier.dart';
 import '../services/location_service.dart';
 import '../widgets/compass_widget.dart';
@@ -18,11 +20,19 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? _userLocation;
   bool _isLoading = true;
   bool _permissionDenied = false;
+  bool _isFollowingUser = true;
+  StreamSubscription<Position>? _positionStream;
 
   @override
   void initState() {
     super.initState();
     _getLocation();
+  }
+
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    super.dispose();
   }
 
   Future<void> _getLocation() async {
@@ -36,14 +46,43 @@ class _MapScreenState extends State<MapScreen> {
           _isLoading = false;
           _permissionDenied = false;
         });
+        // Start listening to real-time location updates
+        _startLocationUpdates();
       } else {
-        // Fallback to ITB STIKOM Bali Renon
         setState(() {
-          _userLocation = const LatLng(-8.6793, 115.2172);
           _isLoading = false;
           _permissionDenied = true;
         });
       }
+    }
+  }
+
+  void _startLocationUpdates() {
+    _positionStream?.cancel();
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) {
+      if (mounted) {
+        setState(() {
+          _userLocation = LatLng(position.latitude, position.longitude);
+        });
+        if (_isFollowingUser) {
+          _mapController.move(
+            LatLng(position.latitude, position.longitude),
+            15.0,
+          );
+        }
+      }
+    });
+  }
+
+  void _recenterMap() {
+    if (_userLocation != null) {
+      setState(() => _isFollowingUser = true);
+      _mapController.move(_userLocation!, 15.0);
     }
   }
 
@@ -89,7 +128,16 @@ class _MapScreenState extends State<MapScreen> {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.directions, size: 18),
+                onPressed: () => Navigator.pop(context),
+                label: const Text('Navigasi ke Supplier'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Tutup'),
               ),
@@ -108,8 +156,8 @@ class _MapScreenState extends State<MapScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.my_location),
-            onPressed: _getLocation,
-            tooltip: 'Recenter',
+            onPressed: _recenterMap,
+            tooltip: 'Recenter ke lokasi saya',
           ),
         ],
       ),
@@ -122,25 +170,35 @@ class _MapScreenState extends State<MapScreen> {
               mapController: _mapController,
               options: MapOptions(
                 initialCenter: _userLocation!,
-                initialZoom: 13.0,
+                initialZoom: 15.0,
                 onTap: (_, tapPosition) {},
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all,
+                ),
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.bluemart',
                 ),
-                // User marker
+                // User marker with live GPS position
                 MarkerLayer(
                   markers: [
                     Marker(
                       point: _userLocation!,
                       width: 40,
                       height: 40,
-                      child: const Icon(
-                        Icons.my_location,
-                        color: Colors.blue,
-                        size: 36,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.my_location,
+                          color: Colors.blue,
+                          size: 36,
+                        ),
                       ),
                     ),
                     // Supplier markers
@@ -189,7 +247,7 @@ class _MapScreenState extends State<MapScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Lokasi tidak diizinkan. Menampilkan lokasi default.',
+                        'Lokasi tidak diizinkan. Aktifkan GPS untuk melihat lokasi real-time.',
                         style: TextStyle(
                           color: Colors.orange[800],
                           fontSize: 13,
@@ -197,6 +255,21 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            ),
+
+          // Not following indicator
+          if (!_isFollowingUser && _userLocation != null)
+            Positioned(
+              bottom: 80,
+              right: 16,
+              child: FloatingActionButton.small(
+                onPressed: _recenterMap,
+                backgroundColor: Colors.white,
+                child: const Icon(
+                  Icons.my_location,
+                  color: Color(0xFF1E3A8A),
                 ),
               ),
             ),

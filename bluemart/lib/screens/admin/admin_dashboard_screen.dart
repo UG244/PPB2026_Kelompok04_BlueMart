@@ -24,6 +24,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Product> _recentProducts = [];
   bool _isLoading = true;
   String _username = '';
+  int _currentNavIndex = 0;
 
   @override
   void initState() {
@@ -91,10 +92,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       appBar: AppBar(
         title: const Text('Dashboard Admin'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.map),
-            onPressed: () => Navigator.pushNamed(context, '/map'),
-          ),
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () => Navigator.pushNamed(context, '/profile'),
@@ -238,7 +235,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Quick actions
+                  // Quick actions - redesigned
                   Text(
                     'Aksi Cepat',
                     style: const TextStyle(
@@ -247,57 +244,78 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Row(
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
-                      Expanded(
-                        child: _buildQuickAction(
-                          icon: Icons.add_box,
-                          label: 'Tambah Produk',
-                          onTap: () async {
-                            final result = await Navigator.pushNamed(
-                              context,
-                              '/admin-product-form',
-                              arguments: null,
-                            );
-                            if (result == true) _loadDashboardData();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildQuickAction(
-                          icon: Icons.list_alt,
-                          label: 'Lihat Produk',
-                          onTap: () async {
-                            await Navigator.pushNamed(
-                              context,
-                              '/admin-products',
-                            );
-                            _loadDashboardData();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildQuickAction(
-                          icon: Icons.receipt,
-                          label: 'Laporan',
-                          onTap: () => Navigator.pushNamed(
+                      _buildQuickAction(
+                        icon: Icons.add_box,
+                        label: 'Tambah Produk',
+                        color: const Color(0xFF3B82F6),
+                        onTap: () async {
+                          final result = await Navigator.pushNamed(
                             context,
-                            '/admin-sales-report',
-                          ),
+                            '/admin-product-form',
+                            arguments: null,
+                          );
+                          if (result == true) _loadDashboardData();
+                        },
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.list_alt,
+                        label: 'Lihat Produk',
+                        color: const Color(0xFF22C55E),
+                        onTap: () async {
+                          await Navigator.pushNamed(
+                            context,
+                            '/admin-products',
+                          );
+                          _loadDashboardData();
+                        },
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.receipt,
+                        label: 'Laporan',
+                        color: const Color(0xFF8B5CF6),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/admin-sales-report',
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildQuickAction(
-                          icon: Icons.map,
-                          label: 'Lihat Peta',
-                          onTap: () => Navigator.pushNamed(context, '/map'),
+                      _buildQuickAction(
+                        icon: Icons.discount,
+                        label: 'Kupon Diskon',
+                        color: const Color(0xFFF97316),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/admin-coupon',
+                        ),
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.payment,
+                        label: 'Pembayaran',
+                        color: const Color(0xFFEC4899),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/admin-payment',
+                        ),
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.qr_code,
+                        label: 'QRIS',
+                        color: const Color(0xFF06B6D4),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/admin-qris',
+                        ),
+                      ),
+                      _buildQuickAction(
+                        icon: Icons.history,
+                        label: 'Riwayat',
+                        color: const Color(0xFF6366F1),
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/user-orders',
                         ),
                       ),
                     ],
@@ -387,6 +405,123 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ],
               ),
             ),
+      // Bottom Navigation Bar for quick access
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentNavIndex,
+          onTap: (index) {
+            setState(() => _currentNavIndex = index);
+            switch (index) {
+              case 0:
+                // Already on dashboard
+                break;
+              case 1:
+                Navigator.pushNamed(context, '/admin-products');
+                break;
+              case 2:
+                _showComingSoon('Kupon Diskon');
+                break;
+              case 3:
+                _showComingSoon('Pembayaran QRIS');
+                break;
+              case 4:
+                Navigator.pushNamed(context, '/admin-sales-report');
+                break;
+            }
+          },
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: const Color(0xFF1E3A8A),
+          unselectedItemColor: const Color(0xFF94A3B8),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          selectedFontSize: 10,
+          unselectedFontSize: 10,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.inventory_2_outlined),
+              activeIcon: Icon(Icons.inventory_2),
+              label: 'Produk',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.discount_outlined),
+              activeIcon: Icon(Icons.discount),
+              label: 'Kupon',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.qr_code_outlined),
+              activeIcon: Icon(Icons.qr_code),
+              label: 'QRIS',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart_outlined),
+              activeIcon: Icon(Icons.bar_chart),
+              label: 'Laporan',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoon(String feature) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.construction,
+                size: 48,
+                color: Color(0xFF1E3A8A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              feature,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Fitur ini sedang dalam pengembangan',
+              style: TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -437,35 +572,45 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildQuickAction({
     required IconData icon,
     required String label,
+    required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 1,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
+    return SizedBox(
+      width: (MediaQuery.of(context).size.width - 16 * 2 - 10 * 3) / 4,
+      child: Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, size: 22, color: color),
                 ),
-                child: Icon(icon, size: 24, color: const Color(0xFF1E3A8A)),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
