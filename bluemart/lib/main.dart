@@ -3,23 +3,32 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
 import 'services/cart_service.dart';
+import 'providers/favorite_provider.dart';
+import 'providers/notification_provider.dart';
+import 'utils/app_theme.dart';
 import 'screens/login_screen.dart';
+import 'screens/notification_screen.dart';
+import 'screens/main_navigation_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/map_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_product_list_screen.dart';
 import 'screens/admin/admin_product_form_screen.dart';
 import 'screens/admin/admin_sales_report_screen.dart';
-import 'screens/user/user_home_screen.dart';
 import 'screens/user/user_cart_screen.dart';
 import 'screens/user/user_checkout_screen.dart';
 import 'screens/user/user_order_history_screen.dart';
+import 'screens/user/barcode_scanner_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => CartService(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartService()),
+        ChangeNotifierProvider(create: (_) => FavoriteProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
       child: const BlueMartApp(),
     ),
   );
@@ -33,23 +42,23 @@ class BlueMartApp extends StatelessWidget {
     return MaterialApp(
       title: 'BlueMart',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       home: const SplashScreen(),
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/login':
+            return MaterialPageRoute(builder: (_) => const LoginScreen());
+          case '/main':
             return MaterialPageRoute(
-              builder: (_) => const LoginScreen(),
+              builder: (_) => const MainNavigationScreen(),
+            );
+          case '/notifications':
+            return MaterialPageRoute(
+              builder: (_) => const NotificationScreen(),
+            );
+          case '/barcode-scanner':
+            return MaterialPageRoute(
+              builder: (_) => const BarcodeScannerScreen(),
             );
           case '/admin-dashboard':
             return MaterialPageRoute(
@@ -67,14 +76,8 @@ class BlueMartApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (_) => const AdminSalesReportScreen(),
             );
-          case '/user-home':
-            return MaterialPageRoute(
-              builder: (_) => const UserHomeScreen(),
-            );
           case '/user-cart':
-            return MaterialPageRoute(
-              builder: (_) => const UserCartScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const UserCartScreen());
           case '/user-checkout':
             return MaterialPageRoute(
               builder: (_) => const UserCheckoutScreen(),
@@ -84,13 +87,9 @@ class BlueMartApp extends StatelessWidget {
               builder: (_) => const UserOrderHistoryScreen(),
             );
           case '/map':
-            return MaterialPageRoute(
-              builder: (_) => const MapScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const MapScreen());
           case '/profile':
-            return MaterialPageRoute(
-              builder: (_) => const ProfileScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const ProfileScreen());
           default:
             return MaterialPageRoute(
               builder: (_) => const Scaffold(
@@ -121,7 +120,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _checkSession() {
-    _timer = Timer(const Duration(milliseconds: 500), () async {
+    _timer = Timer(const Duration(milliseconds: 1500), () async {
       final isLoggedIn = await _authService.isLoggedIn();
       if (!mounted) return;
 
@@ -132,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen> {
           if (user.role == 'admin') {
             Navigator.pushReplacementNamed(context, '/admin-dashboard');
           } else {
-            Navigator.pushReplacementNamed(context, '/user-home');
+            Navigator.pushReplacementNamed(context, '/main');
           }
         } else {
           Navigator.pushReplacementNamed(context, '/login');
@@ -152,26 +151,57 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.store,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'BlueMart',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppTheme.primaryDark, AppTheme.accent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(Icons.store, size: 60, color: Colors.white),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'BlueMart',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Belanja Hemat & Cepat',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.white.withValues(alpha: 0.8),
                   ),
-            ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(),
-          ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

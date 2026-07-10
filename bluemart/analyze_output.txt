@@ -1,0 +1,20 @@
+﻿Analyzing lib...
+
+warning - screens\main_navigation_screen.dart:4:8 - Unused import: '../services/cart_service.dart'. Try removing the import directive. - unused_import
+warning - screens\profile_screen.dart:7:8 - Unused import: '../providers/notification_provider.dart'. Try removing the import directive. - unused_import
+warning - screens\user\user_checkout_screen.dart:315:23 - The value of the local variable 'isSelected' isn't used. Try removing the variable or using it. - unused_local_variable
+warning - screens\user\user_home_screen.dart:9:8 - Unused import: '../../providers/notification_provider.dart'. Try removing the import directive. - unused_import
+   info - screens\main_navigation_screen.dart:76:39 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - screens\main_navigation_screen.dart:83:39 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - screens\profile_screen.dart:570:13 - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - screens\user\user_catalog_screen.dart:331:45 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - screens\user\user_catalog_screen.dart:331:49 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - screens\user\user_checkout_screen.dart:320:21 - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - screens\user\user_checkout_screen.dart:321:21 - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre. Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+   info - screens\user\user_favorite_screen.dart:161:43 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - screens\user\user_favorite_screen.dart:161:47 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - screens\user\user_home_screen.dart:474:37 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - screens\user\user_home_screen.dart:557:45 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+   info - screens\user\user_home_screen.dart:557:49 - Unnecessary use of multiple underscores. Try using '_'. - unnecessary_underscores
+
+16 issues found.
