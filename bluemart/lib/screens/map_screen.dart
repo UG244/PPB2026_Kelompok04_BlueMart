@@ -37,9 +37,9 @@ class _MapScreenState extends State<MapScreen> {
           _permissionDenied = false;
         });
       } else {
-        // Fallback to Jakarta city center
+        // Fallback to ITB STIKOM Bali Renon
         setState(() {
-          _userLocation = const LatLng(-6.2088, 106.8456);
+          _userLocation = const LatLng(-8.6793, 115.2172);
           _isLoading = false;
           _permissionDenied = true;
         });
@@ -58,10 +58,7 @@ class _MapScreenState extends State<MapScreen> {
           children: [
             Text(
               supplier.name,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Row(
@@ -83,12 +80,7 @@ class _MapScreenState extends State<MapScreen> {
                   const Icon(Icons.straighten, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    '${(_locationService.calculateDistance(
-                      _userLocation!.latitude,
-                      _userLocation!.longitude,
-                      supplier.latitude,
-                      supplier.longitude,
-                    ) / 1000).toStringAsFixed(1)} km dari lokasi Anda',
+                    '${(_locationService.calculateDistance(_userLocation!.latitude, _userLocation!.longitude, supplier.latitude, supplier.longitude) / 1000).toStringAsFixed(1)} km dari lokasi Anda',
                     style: TextStyle(color: Colors.grey[600]),
                   ),
                 ],
@@ -189,12 +181,19 @@ class _MapScreenState extends State<MapScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                    Icon(
+                      Icons.info_outline,
+                      color: Colors.orange[700],
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Lokasi tidak diizinkan. Menampilkan lokasi default.',
-                        style: TextStyle(color: Colors.orange[800], fontSize: 13),
+                        style: TextStyle(
+                          color: Colors.orange[800],
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],

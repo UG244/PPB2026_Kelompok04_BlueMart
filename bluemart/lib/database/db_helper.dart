@@ -21,8 +21,9 @@ class DbHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -31,12 +32,41 @@ class DbHelper {
       CREATE TABLE products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
+        description TEXT DEFAULT '',
         category TEXT NOT NULL,
         price REAL NOT NULL,
         stock INTEGER NOT NULL,
         photoPath TEXT,
         supplierId INTEGER,
         isActive INTEGER NOT NULL DEFAULT 0,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE promotions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        subtitle TEXT DEFAULT '',
+        badge TEXT DEFAULT '',
+        icon TEXT DEFAULT 'flash_on',
+        color1 INTEGER DEFAULT 0xFF1E3A8A,
+        color2 INTEGER DEFAULT 0xFF3B82F6,
+        isActive INTEGER NOT NULL DEFAULT 1,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE promo_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discountPercent REAL DEFAULT 0,
+        minPurchase REAL DEFAULT 0,
+        freeShipping INTEGER NOT NULL DEFAULT 0,
+        isActive INTEGER NOT NULL DEFAULT 1,
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
       )
@@ -65,6 +95,19 @@ class DbHelper {
         FOREIGN KEY (productId) REFERENCES products(id)
       )
     ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add description column if upgrading from v1
+      try {
+        await db.execute(
+          'ALTER TABLE products ADD COLUMN description TEXT DEFAULT ""',
+        );
+      } catch (_) {
+        // Column might already exist
+      }
+    }
   }
 
   // ==================== PRODUCT CRUD ====================
@@ -113,6 +156,31 @@ class DbHelper {
     return await db.delete('products', where: 'id = ?', whereArgs: [id]);
   }
 
+  // Hapus produk beserta item transaksi terkait
+  Future<void> deleteProductCascade(int id) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(
+        'transaction_items',
+        where: 'productId = ?',
+        whereArgs: [id],
+      );
+      await txn.delete('products', where: 'id = ?', whereArgs: [id]);
+    });
+  }
+
+  // Cari produk berdasarkan nama atau kategori
+  Future<List<Product>> searchProducts(String query) async {
+    final db = await database;
+    final maps = await db.query(
+      'products',
+      where: 'name LIKE ? OR category LIKE ?',
+      whereArgs: ['%$query%', '%$query%'],
+      orderBy: 'createdAt DESC',
+    );
+    return maps.map((map) => Product.fromMap(map)).toList();
+  }
+
   Future<int> getTotalProducts() async {
     final db = await database;
     final result = await db.rawQuery('SELECT COUNT(*) as count FROM products');
@@ -121,7 +189,9 @@ class DbHelper {
 
   Future<int> getTotalStock() async {
     final db = await database;
-    final result = await db.rawQuery('SELECT COALESCE(SUM(stock), 0) as total FROM products');
+    final result = await db.rawQuery(
+      'SELECT COALESCE(SUM(stock), 0) as total FROM products',
+    );
     return (result.first['total'] as num).toInt();
   }
 
@@ -156,7 +226,9 @@ class DbHelper {
     await db.insert('transaction_items', itemData);
   }
 
-  Future<List<Map<String, dynamic>>> getUserTransactions(String username) async {
+  Future<List<Map<String, dynamic>>> getUserTransactions(
+    String username,
+  ) async {
     final db = await database;
     return await db.query(
       'transactions',
@@ -171,7 +243,9 @@ class DbHelper {
     return await db.query('transactions', orderBy: 'createdAt DESC');
   }
 
-  Future<List<Map<String, dynamic>>> getTransactionItems(int transactionId) async {
+  Future<List<Map<String, dynamic>>> getTransactionItems(
+    int transactionId,
+  ) async {
     final db = await database;
     return await db.query(
       'transaction_items',
@@ -182,8 +256,22 @@ class DbHelper {
 
   Future<double> getTotalRevenue() async {
     final db = await database;
-    final result = await db.rawQuery('SELECT COALESCE(SUM(totalAmount), 0) as total FROM transactions');
+    final result = await db.rawQuery(
+      'SELECT COALESCE(SUM(totalAmount), 0) as total FROM transactions',
+    );
     return (result.first['total'] as num).toDouble();
+  }
+
+  // Mendapatkan produk dengan stok paling sedikit
+  Future<List<Product>> getLowStockProducts({int threshold = 5}) async {
+    final db = await database;
+    final maps = await db.query(
+      'products',
+      where: 'stock > 0 AND stock < ?',
+      whereArgs: [threshold],
+      orderBy: 'stock ASC',
+    );
+    return maps.map((map) => Product.fromMap(map)).toList();
   }
 
   Future<Database> get db => database;

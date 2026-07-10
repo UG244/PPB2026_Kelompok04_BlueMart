@@ -13,6 +13,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
   final _transactionService = TransactionService();
   final _authService = AuthService();
   List<Map<String, dynamic>> _transactions = [];
+  Map<int, List<Map<String, dynamic>>> _transactionItems = {};
   bool _isLoading = true;
   DateTimeRange? _dateRange;
 
@@ -26,18 +27,33 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
   Future<void> _checkAccess() async {
     final isAdmin = await _authService.isAdmin();
     if (!isAdmin && mounted) {
-      Navigator.pushNamedAndRemoveUntil(context, '/user-home', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/user-home',
+        (route) => false,
+      );
     }
   }
 
   Future<void> _loadTransactions() async {
     setState(() => _isLoading = true);
-    final transactions = await _transactionService.getAllTransactions();
-    if (mounted) {
-      setState(() {
-        _transactions = transactions;
-        _isLoading = false;
-      });
+    try {
+      final transactions = await _transactionService.getAllTransactions();
+      final Map<int, List<Map<String, dynamic>>> itemsMap = {};
+      for (final t in transactions) {
+        final id = t['id'] as int;
+        final items = await _transactionService.getTransactionItems(id);
+        itemsMap[id] = items;
+      }
+      if (mounted) {
+        setState(() {
+          _transactions = transactions;
+          _transactionItems = itemsMap;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -46,7 +62,9 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
     return _transactions.where((t) {
       try {
         final date = DateTime.parse(t['createdAt'] as String);
-        return date.isAfter(_dateRange!.start.subtract(const Duration(days: 1))) &&
+        return date.isAfter(
+              _dateRange!.start.subtract(const Duration(days: 1)),
+            ) &&
             date.isBefore(_dateRange!.end.add(const Duration(days: 1)));
       } catch (_) {
         return false;
@@ -54,10 +72,15 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
     }).toList();
   }
 
-  double get _totalRevenue =>
-      _filteredTransactions.fold(0.0, (sum, t) => sum + (t['totalAmount'] as num).toDouble());
+  double get _totalRevenue => _filteredTransactions.fold(
+    0.0,
+    (sum, t) => sum + (t['totalAmount'] as num).toDouble(),
+  );
 
-  int get _totalItemsSold => _filteredTransactions.length;
+  int get _totalItemsSold => _filteredTransactions.fold(0, (sum, t) {
+    final items = _transactionItems[t['id'] as int] ?? [];
+    return sum + items.fold(0, (s, i) => s + (i['quantity'] as int));
+  });
 
   Future<void> _pickDateRange() async {
     final picked = await showDateRangePicker(
@@ -72,7 +95,9 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
   }
 
   void _showTransactionDetail(Map<String, dynamic> transaction) async {
-    final items = await _transactionService.getTransactionItems(transaction['id'] as int);
+    final items = await _transactionService.getTransactionItems(
+      transaction['id'] as int,
+    );
     if (!mounted) return;
 
     showModalBottomSheet(
@@ -90,7 +115,10 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
             children: [
               Text(
                 'Transaksi #${transaction['id']}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -102,36 +130,50 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                 style: TextStyle(color: Colors.grey[600]),
               ),
               const Divider(),
-              ...items.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(item['productName'] as String,
-                                  style: const TextStyle(fontWeight: FontWeight.w600)),
-                              Text(
-                                '${item['quantity']} x Rp ${_formatPrice((item['unitPrice'] as num).toDouble())}',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              ...items.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['productName'] as String,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
-                          ),
+                            ),
+                            Text(
+                              '${item['quantity']} x Rp ${_formatPrice((item['unitPrice'] as num).toDouble())}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Rp ${_formatPrice((item['subtotal'] as num).toDouble())}',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                      ],
-                    ),
-                  )),
+                      ),
+                      Text(
+                        'Rp ${_formatPrice((item['subtotal'] as num).toDouble())}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const Divider(),
               Row(
                 children: [
                   const Expanded(
-                    child: Text('Total',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Total',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   Text(
                     'Rp ${_formatPrice((transaction['totalAmount'] as num).toDouble())}',
@@ -228,35 +270,47 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                       ),
                     )
                   else
-                    ..._filteredTransactions.map((t) => Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.green[50],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+                    ..._filteredTransactions.map(
+                      (t) => Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.green[50],
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            title: Text(
-                              'Transaksi #${t['id']} - ${t['buyerUsername']}',
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                            child: Icon(
+                              Icons.check_circle,
+                              color: Colors.green[700],
+                              size: 20,
                             ),
-                            subtitle: Text(
-                              _formatDate(t['createdAt'] as String),
-                              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                            ),
-                            trailing: Text(
-                              'Rp ${_formatPrice((t['totalAmount'] as num).toDouble())}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                            onTap: () => _showTransactionDetail(t),
                           ),
-                        )),
+                          title: Text(
+                            'Transaksi #${t['id']} - ${t['buyerUsername']}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          subtitle: Text(
+                            _formatDate(t['createdAt'] as String),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                          ),
+                          trailing: Text(
+                            'Rp ${_formatPrice((t['totalAmount'] as num).toDouble())}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          onTap: () => _showTransactionDetail(t),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -288,10 +342,19 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                  Text(
+                    title,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  ),
                   const SizedBox(height: 4),
-                  Text(value,
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -311,7 +374,9 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
   }
 
   String _formatPrice(double price) {
-    return price.toStringAsFixed(0).replaceAllMapped(
+    return price
+        .toStringAsFixed(0)
+        .replaceAllMapped(
           RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
           (match) => '${match.group(1)}.',
         );
