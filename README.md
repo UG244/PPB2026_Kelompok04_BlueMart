@@ -254,7 +254,3 @@ Project ini disubmit untuk memenuhi tugas akhir mata kuliah Pemrograman Piranti 
 ## 🔗 Repository
 
 **GitHub**: https://github.com/UG244/PPB2026_Kelompok04_BlueMart
-
----
-
-*Dokumentasi ini disusun sesuai dengan standar PROJECT.md mata kuliah Pemrograman Piranti Bergerak, Semester IV, Tahun Akademik 2025/2026.*
