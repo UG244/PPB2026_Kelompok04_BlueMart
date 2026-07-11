@@ -55,7 +55,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Route guard: returns false if user should be redirected to login.
+  /// Allows access while [isLoading] so the Splash Screen can navigate.
   bool guardAdmin() {
+    if (_isLoading) return true;
     if (_currentUser == null || _currentUser!.role != 'admin') {
       return false;
     }
@@ -63,7 +65,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// Route guard: returns false if no user is logged in.
+  /// Allows access while [isLoading] so the Splash Screen can navigate.
   bool guardUser() {
+    if (_isLoading) return true;
     if (_currentUser == null) {
       return false;
     }

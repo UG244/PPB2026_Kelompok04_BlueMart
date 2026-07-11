@@ -5,6 +5,7 @@ import 'user_home_screen.dart';
 import 'user_favorite_screen.dart';
 import 'user_order_history_screen.dart';
 import '../profile_screen.dart';
+import 'user_cart_screen.dart';
 
 class UserMainScreen extends StatefulWidget {
   const UserMainScreen({super.key});
@@ -24,6 +25,7 @@ class _UserMainScreenState extends State<UserMainScreen> {
     super.initState();
     _screens = [
       UserHomeScreen(key: _homeKey),
+      const UserCartScreen(),
       const UserOrderHistoryScreen(),
       const UserFavoriteScreen(),
       const ProfileScreen(),
@@ -48,7 +50,6 @@ class _UserMainScreenState extends State<UserMainScreen> {
           currentIndex: _currentIndex,
           onTap: (index) {
             setState(() => _currentIndex = index);
-            // Reload promo state when switching back to Beranda
             if (index == 0) {
               _homeKey.currentState?.reloadPromoState();
             }
@@ -58,20 +59,20 @@ class _UserMainScreenState extends State<UserMainScreen> {
           unselectedItemColor: const Color(0xFF94A3B8),
           backgroundColor: Colors.white,
           elevation: 0,
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
+          selectedFontSize: 10,
+          unselectedFontSize: 10,
           items: [
             const BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
+              icon: Icon(Icons.home_outlined, size: 22),
+              activeIcon: Icon(Icons.home, size: 22),
               label: 'Beranda',
             ),
             BottomNavigationBarItem(
               icon: Consumer<CartService>(
-                builder: (context, cart, _) => Stack(
+                builder: (ctx, cart, _) => Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Icon(Icons.receipt_long_outlined),
+                    const Icon(Icons.shopping_cart_outlined, size: 22),
                     if (cart.uniqueItemCount > 0)
                       Positioned(
                         right: -8,
@@ -82,10 +83,6 @@ class _UserMainScreenState extends State<UserMainScreen> {
                             color: Color(0xFFEF4444),
                             shape: BoxShape.circle,
                           ),
-                          constraints: const BoxConstraints(
-                            minWidth: 14,
-                            minHeight: 14,
-                          ),
                           child: Text(
                             '${cart.uniqueItemCount}',
                             style: const TextStyle(
@@ -93,7 +90,6 @@ class _UserMainScreenState extends State<UserMainScreen> {
                               fontSize: 8,
                               fontWeight: FontWeight.bold,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
@@ -101,10 +97,10 @@ class _UserMainScreenState extends State<UserMainScreen> {
                 ),
               ),
               activeIcon: Consumer<CartService>(
-                builder: (context, cart, _) => Stack(
+                builder: (ctx, cart, _) => Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Icon(Icons.receipt_long),
+                    const Icon(Icons.shopping_cart, size: 22),
                     if (cart.uniqueItemCount > 0)
                       Positioned(
                         right: -8,
@@ -115,10 +111,6 @@ class _UserMainScreenState extends State<UserMainScreen> {
                             color: Color(0xFFEF4444),
                             shape: BoxShape.circle,
                           ),
-                          constraints: const BoxConstraints(
-                            minWidth: 14,
-                            minHeight: 14,
-                          ),
                           child: Text(
                             '${cart.uniqueItemCount}',
                             style: const TextStyle(
@@ -126,23 +118,27 @@ class _UserMainScreenState extends State<UserMainScreen> {
                               fontSize: 8,
                               fontWeight: FontWeight.bold,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ),
                   ],
                 ),
               ),
+              label: 'Keranjang',
+            ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_outlined, size: 22),
+              activeIcon: Icon(Icons.receipt_long, size: 22),
               label: 'Pesanan',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_outline),
-              activeIcon: Icon(Icons.favorite),
+              icon: Icon(Icons.favorite_outline, size: 22),
+              activeIcon: Icon(Icons.favorite, size: 22),
               label: 'Favorit',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
+              icon: Icon(Icons.person_outline, size: 22),
+              activeIcon: Icon(Icons.person, size: 22),
               label: 'Akun',
             ),
           ],

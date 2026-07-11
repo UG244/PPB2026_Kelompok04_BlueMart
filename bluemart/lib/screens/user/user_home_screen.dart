@@ -8,6 +8,7 @@ import '../../models/cart_item.dart';
 import '../../database/db_helper.dart';
 import '../../services/product_service.dart';
 import '../../services/cart_service.dart';
+import '../../providers/notification_provider.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -243,10 +244,43 @@ class UserHomeScreenState extends State<UserHomeScreen> {
               ],
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.notifications_outlined),
-                onPressed: () =>
-                    Navigator.pushNamed(context, '/user-notifications'),
+              Consumer<NotificationProvider>(
+                builder: (ctx, notif, _) => Stack(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.notifications_outlined),
+                      onPressed: () =>
+                          Navigator.pushNamed(ctx, '/user-notifications'),
+                    ),
+                    if (notif.unreadCount > 0)
+                      Positioned(
+                        right: 3,
+                        top: 3,
+                        child: IgnorePointer(
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              '${notif.unreadCount}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               Consumer<CartService>(
                 builder: (context, cart, _) => Stack(

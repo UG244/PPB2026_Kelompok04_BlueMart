@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../services/transaction_service.dart';
+import '../../database/db_helper.dart';
+import '../../models/notification_item.dart';
+import '../../providers/notification_provider.dart';
 
 class AdminSalesReportScreen extends StatefulWidget {
   const AdminSalesReportScreen({super.key});
@@ -80,21 +84,81 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
     }
   }
 
+  void _updateTransactionStatus(
+    Map<String, dynamic> transaction,
+    String newStatus,
+  ) async {
+    final db = DbHelper();
+    await db.updateTransactionStatus(transaction['id'] as int, newStatus);
+    // Fire notification for the user
+    try {
+      final notif = context.read<NotificationProvider>();
+      final statusLabels = {
+        'completed': 'selesai',
+        'menunggu': 'menunggu pembayaran',
+        'diproses': 'sedang diproses',
+        'dikirim': 'dikirim',
+        'selesai': 'selesai',
+        'dibatalkan': 'dibatalkan',
+      };
+      final label = statusLabels[newStatus.toLowerCase()] ?? newStatus;
+      final statusIcons = {
+        'completed': Icons.check_circle,
+        'menunggu': Icons.pending,
+        'diproses': Icons.inventory_2,
+        'dikirim': Icons.local_shipping,
+        'selesai': Icons.check_circle,
+        'dibatalkan': Icons.cancel,
+      };
+      final statusColors = {
+        'completed': const Color(0xFF22C55E),
+        'menunggu': const Color(0xFFEAB308),
+        'diproses': const Color(0xFF3B82F6),
+        'dikirim': const Color(0xFFF97316),
+        'selesai': const Color(0xFF22C55E),
+        'dibatalkan': const Color(0xFFEF4444),
+      };
+      notif.add(
+        AppNotification.orderStatus(
+          orderId: '${transaction['id']}',
+          statusLabel: label,
+          icon: statusIcons[newStatus.toLowerCase()] ?? Icons.receipt_long,
+          color:
+              statusColors[newStatus.toLowerCase()] ?? const Color(0xFF3B82F6),
+        ),
+      );
+    } catch (_) {}
+    _loadTransactions();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Status pesanan #${transaction['id']} diubah menjadi "$newStatus"',
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF22C55E),
+        ),
+      );
+    }
+  }
+
   void _showTransactionDetail(Map<String, dynamic> transaction) async {
     final items = await _transactionService.getTransactionItems(
       transaction['id'] as int,
     );
     if (!mounted) return;
 
+    final currentStatus = (transaction['status'] as String?) ?? 'completed';
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
+      builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         minChildSize: 0.3,
         maxChildSize: 0.9,
         expand: false,
-        builder: (context, scrollController) => Padding(
+        builder: (ctx, scrollController) => Padding(
           padding: const EdgeInsets.all(16),
           child: ListView(
             controller: scrollController,
@@ -112,8 +176,58 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                 style: TextStyle(color: Colors.grey[600]),
               ),
               Text(
+                'Status: $currentStatus',
+                style: const TextStyle(
+                  color: Color(0xFF3B82F6),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
                 'Tanggal: ${_formatDate(transaction['createdAt'] as String)}',
                 style: TextStyle(color: Colors.grey[600]),
+              ),
+              const Divider(),
+              // Status change dropdown
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    const Text(
+                      'Ubah Status: ',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: currentStatus,
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                        items:
+                            [
+                              'completed',
+                              'menunggu',
+                              'diproses',
+                              'dikirim',
+                              'selesai',
+                              'dibatalkan',
+                            ].map((s) {
+                              return DropdownMenuItem(value: s, child: Text(s));
+                            }).toList(),
+                        onChanged: (newStatus) {
+                          if (newStatus != null && newStatus != currentStatus) {
+                            Navigator.pop(ctx);
+                            _updateTransactionStatus(transaction, newStatus);
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const Divider(),
               ...items.map(

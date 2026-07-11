@@ -20,6 +20,10 @@ class AppTheme {
   static const Color divider = Color(0xFFE2E8F0);
   static const Color inputFill = Color(0xFFF1F5F9);
 
+  // ---- Standard Radius Constants ----
+  static const double cardShape = 14.0;
+  static const double chipRadius = 20.0;
+
   // ---- Glassmorphism Shadows ----
   static List<BoxShadow> glassShadow(Color color) => [
     BoxShadow(

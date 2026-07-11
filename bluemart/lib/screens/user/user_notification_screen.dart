@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/notification_provider.dart';
+import '../../models/notification_item.dart';
 
 class UserNotificationScreen extends StatefulWidget {
   const UserNotificationScreen({super.key});
@@ -10,99 +13,22 @@ class UserNotificationScreen extends StatefulWidget {
 class _UserNotificationScreenState extends State<UserNotificationScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<_NotificationItem> _allNotifications = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _generateSampleNotifications();
   }
 
-  void _generateSampleNotifications() {
-    final now = DateTime.now();
-    _allNotifications.addAll([
-      _NotificationItem(
-        icon: Icons.local_shipping,
-        iconColor: const Color(0xFF3B82F6),
-        title: 'Pesanan Dikirim',
-        message: 'Pesanan #123 sudah dikirim dan sedang dalam perjalanan.',
-        time: now.subtract(const Duration(minutes: 5)),
-        type: 'pesanan',
-        isRead: false,
-      ),
-      _NotificationItem(
-        icon: Icons.discount,
-        iconColor: const Color(0xFFF97316),
-        title: 'Promo Spesial!',
-        message: 'Diskon 50% Flash Sale hari ini. Buruan sebelum kehabisan!',
-        time: now.subtract(const Duration(hours: 1)),
-        type: 'promo',
-        isRead: false,
-      ),
-      _NotificationItem(
-        icon: Icons.check_circle,
-        iconColor: const Color(0xFF22C55E),
-        title: 'Pesanan Selesai',
-        message: 'Terima kasih sudah berbelanja. Pesanan #456 telah selesai.',
-        time: now.subtract(const Duration(days: 1)),
-        type: 'pesanan',
-        isRead: true,
-      ),
-      _NotificationItem(
-        icon: Icons.payment,
-        iconColor: const Color(0xFF8B5CF6),
-        title: 'Pembayaran Diterima',
-        message: 'Pembayaran untuk pesanan #789 telah dikonfirmasi.',
-        time: now.subtract(const Duration(days: 2)),
-        type: 'pesanan',
-        isRead: true,
-      ),
-      _NotificationItem(
-        icon: Icons.redeem,
-        iconColor: const Color(0xFFEC4899),
-        title: 'Voucher Baru',
-        message:
-            'Dapatkan voucher belanja Rp50.000 untuk pembelian minimal Rp500.000',
-        time: now.subtract(const Duration(days: 3)),
-        type: 'promo',
-        isRead: true,
-      ),
-      _NotificationItem(
-        icon: Icons.store,
-        iconColor: const Color(0xFF1E3A8A),
-        title: 'Produk Baru Tersedia',
-        message: 'Produk-produk gadget terbaru sudah hadir di BlueMart!',
-        time: now.subtract(const Duration(days: 5)),
-        type: 'promo',
-        isRead: true,
-      ),
-    ]);
-  }
-
-  List<_NotificationItem> get _filteredNotifications {
-    switch (_tabController.index) {
+  List<AppNotification> _filtered(List<AppNotification> all, int tabIndex) {
+    switch (tabIndex) {
       case 1:
-        return _allNotifications.where((n) => n.type == 'pesanan').toList();
+        return all.where((n) => n.type == 'order').toList();
       case 2:
-        return _allNotifications.where((n) => n.type == 'promo').toList();
+        return all.where((n) => n.type == 'promo').toList();
       default:
-        return _allNotifications;
+        return all;
     }
-  }
-
-  void _markAllRead() {
-    setState(() {
-      for (var n in _allNotifications) {
-        n.isRead = true;
-      }
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Semua notifikasi telah dibaca'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   @override
@@ -113,65 +39,82 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifikasi'),
-        actions: [
-          TextButton.icon(
-            onPressed: _markAllRead,
-            icon: const Icon(Icons.done_all, color: Colors.white, size: 18),
-            label: const Text(
-              'Baca Semua',
-              style: TextStyle(color: Colors.white, fontSize: 12),
+    return Consumer<NotificationProvider>(
+      builder: (context, notif, _) {
+        final all = notif.notifications;
+        final filtered = _filtered(all, _tabController.index);
+        final unreadAll = notif.unreadCount;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Notifikasi'),
+            actions: [
+              if (unreadAll > 0)
+                TextButton.icon(
+                  onPressed: () => notif.markAllRead(),
+                  icon: const Icon(
+                    Icons.done_all,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Baca Semua',
+                    style: TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ),
+            ],
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.white,
+              indicatorWeight: 3,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+              onTap: (_) => setState(() {}),
+              tabs: [
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Semua'),
+                      if (unreadAll > 0)
+                        Container(
+                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$unreadAll',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const Tab(text: 'Pesanan'),
+                const Tab(text: 'Promo'),
+              ],
             ),
           ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          indicatorWeight: 3,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Semua'),
-                  if (_allNotifications.any((n) => !n.isRead))
-                    Container(
-                      margin: const EdgeInsets.only(left: 6),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_allNotifications.where((n) => !n.isRead).length}',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const Tab(text: 'Pesanan'),
-            const Tab(text: 'Promo'),
-          ],
-        ),
-      ),
-      body: _buildNotificationList(),
+          body: _buildNotificationList(notif, filtered, all),
+        );
+      },
     );
   }
 
-  Widget _buildNotificationList() {
-    final notifications = _filteredNotifications;
-    if (notifications.isEmpty) {
+  Widget _buildNotificationList(
+    NotificationProvider notif,
+    List<AppNotification> filtered,
+    List<AppNotification> all,
+  ) {
+    if (filtered.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -210,16 +153,18 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
     }
 
     // Group by date
-    final today = <_NotificationItem>[];
-    final yesterday = <_NotificationItem>[];
-    final older = <_NotificationItem>[];
+    final today = <AppNotification>[];
+    final yesterday = <AppNotification>[];
+    final older = <AppNotification>[];
     final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day);
+    final yesterdayStart = todayStart.subtract(const Duration(days: 1));
 
-    for (var n in notifications) {
-      final diff = now.difference(n.time);
-      if (diff.inDays == 0) {
+    for (var n in filtered) {
+      if (n.createdAt.isAfter(todayStart) ||
+          n.createdAt.isAtSameMomentAs(todayStart)) {
         today.add(n);
-      } else if (diff.inDays == 1) {
+      } else if (n.createdAt.isAfter(yesterdayStart)) {
         yesterday.add(n);
       } else {
         older.add(n);
@@ -228,21 +173,26 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
 
     return RefreshIndicator(
       onRefresh: () async {
-        await Future.delayed(const Duration(seconds: 1));
+        await Future.delayed(const Duration(milliseconds: 300));
         if (mounted) setState(() {});
       },
       child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          if (today.isNotEmpty) _buildDateSection('Hari Ini', today),
-          if (yesterday.isNotEmpty) _buildDateSection('Kemarin', yesterday),
-          if (older.isNotEmpty) _buildDateSection('Sebelumnya', older),
+          if (today.isNotEmpty) _buildDateSection(notif, 'Hari Ini', today),
+          if (yesterday.isNotEmpty)
+            _buildDateSection(notif, 'Kemarin', yesterday),
+          if (older.isNotEmpty) _buildDateSection(notif, 'Sebelumnya', older),
         ],
       ),
     );
   }
 
-  Widget _buildDateSection(String label, List<_NotificationItem> items) {
+  Widget _buildDateSection(
+    NotificationProvider notif,
+    String label,
+    List<AppNotification> items,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -257,14 +207,17 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
             ),
           ),
         ),
-        ...items.map((item) => _buildNotificationCard(item)),
+        ...items.map((item) => _buildNotificationCard(notif, item)),
       ],
     );
   }
 
-  Widget _buildNotificationCard(_NotificationItem item) {
+  Widget _buildNotificationCard(
+    NotificationProvider notif,
+    AppNotification item,
+  ) {
     return Dismissible(
-      key: Key('${item.title}${item.time}'),
+      key: Key(item.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
@@ -272,10 +225,9 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
         color: Colors.red,
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
-      onDismissed: (_) {
-        setState(() {
-          _allNotifications.remove(item);
-        });
+      confirmDismiss: (_) async {
+        notif.remove(item.id);
+        return true;
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -291,7 +243,7 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
           borderRadius: BorderRadius.circular(14),
           onTap: () {
             if (!item.isRead) {
-              setState(() => item.isRead = true);
+              notif.markRead(item.id);
             }
           },
           child: Padding(
@@ -352,7 +304,7 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        _formatTime(item.time),
+                        _formatTime(item.createdAt),
                         style: const TextStyle(
                           fontSize: 11,
                           color: Color(0xFF94A3B8),
@@ -378,24 +330,4 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
     if (diff.inDays == 1) return 'Kemarin';
     return '${diff.inDays} hari yang lalu';
   }
-}
-
-class _NotificationItem {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String message;
-  final DateTime time;
-  final String type;
-  bool isRead;
-
-  _NotificationItem({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.message,
-    required this.time,
-    required this.type,
-    this.isRead = false,
-  });
 }

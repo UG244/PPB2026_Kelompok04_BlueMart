@@ -8,6 +8,7 @@ import 'theme/app_theme.dart';
 // Providers
 import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/notification_provider.dart';
 
 // Services
 import 'services/auth_service.dart';
@@ -24,6 +25,7 @@ import 'screens/admin/admin_sales_report_screen.dart';
 import 'screens/admin/admin_coupon_screen.dart';
 import 'screens/admin/admin_payment_screen.dart';
 import 'screens/admin/admin_qris_screen.dart';
+import 'screens/admin/admin_user_management_screen.dart';
 import 'screens/user/user_main_screen.dart';
 import 'screens/user/user_cart_screen.dart';
 import 'screens/user/user_checkout_screen.dart';
@@ -41,6 +43,9 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthProvider()..initSession()),
         ChangeNotifierProvider(create: (_) => CartService()),
         ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider()..initSync(),
+        ),
       ],
       child: const BlueMartApp(),
     ),
@@ -177,6 +182,13 @@ class BlueMartApp extends StatelessWidget {
               return _redirectLogin();
             }
             return MaterialPageRoute(builder: (_) => const AdminQrisScreen());
+          case '/admin-users':
+            if (!auth.guardAdmin()) {
+              return _redirectLogin();
+            }
+            return MaterialPageRoute(
+              builder: (_) => const AdminUserManagementScreen(),
+            );
 
           default:
             return MaterialPageRoute(

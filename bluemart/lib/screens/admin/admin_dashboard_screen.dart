@@ -282,6 +282,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         onTap: () =>
                             Navigator.pushNamed(context, '/user-orders'),
                       ),
+                      _buildQuickAction(
+                        icon: Icons.people,
+                        label: 'Manajemen User',
+                        color: const Color(0xFF0EA5E9),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/admin-users'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),

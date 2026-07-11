@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/checkout_address.dart';
+import '../../models/notification_item.dart';
 import '../../database/db_helper.dart';
 import '../../services/cart_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/transaction_service.dart';
+import '../../providers/notification_provider.dart';
 import 'user_address_screen.dart';
 
 class UserCheckoutScreen extends StatefulWidget {
@@ -1153,7 +1155,18 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
           _success = r['success'] as bool;
           _resultMessage = r['message'] as String?;
         });
-        if (_success) cart.clearCart();
+        if (_success) {
+          cart.clearCart();
+          // Fire success notification
+          try {
+            final notif = context.read<NotificationProvider>();
+            final lastTxns = await _dbHelper.getAllTransactions();
+            if (lastTxns.isNotEmpty) {
+              final orderId = '${lastTxns.first['id']}';
+              notif.add(AppNotification.orderSuccess(orderId));
+            }
+          } catch (_) {}
+        }
       }
     } catch (e) {
       if (mounted)

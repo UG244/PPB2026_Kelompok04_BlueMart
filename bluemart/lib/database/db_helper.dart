@@ -21,7 +21,7 @@ class DbHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -108,7 +108,6 @@ class DbHelper {
       } catch (_) {}
     }
     if (oldVersion < 3) {
-      // Create tables that didn't exist before v3
       try {
         await db.execute('''
           CREATE TABLE IF NOT EXISTS promotions (
@@ -140,6 +139,31 @@ class DbHelper {
         ''');
       } catch (_) {}
       await _seedDefaults(db);
+    }
+    if (oldVersion < 4) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            iconName TEXT DEFAULT 'laptop',
+            isActive INTEGER NOT NULL DEFAULT 1,
+            createdAt TEXT NOT NULL,
+            updatedAt TEXT NOT NULL
+          )
+        ''');
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE products ADD COLUMN weight REAL DEFAULT 0',
+        );
+      } catch (_) {}
+      try {
+        await db.execute(
+          'ALTER TABLE products ADD COLUMN discountPercent REAL DEFAULT 0',
+        );
+      } catch (_) {}
+      await _seedCategories(db);
     }
   }
 
@@ -352,6 +376,16 @@ class DbHelper {
     );
   }
 
+  Future<int> updateTransactionStatus(int id, String newStatus) async {
+    final db = await database;
+    return await db.update(
+      'transactions',
+      {'status': newStatus},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<double> getTotalRevenue() async {
     final db = await database;
     final result = await db.rawQuery(
@@ -494,6 +528,66 @@ class DbHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> _seedCategories(Database db) async {
+    final result = await db.rawQuery('SELECT COUNT(*) as c FROM categories');
+    final count = result.first['c'] as int;
+    if (count == 0) {
+      final now = DateTime.now().toIso8601String();
+      final cats = [
+        {'name': 'Laptop', 'iconName': 'laptop'},
+        {'name': 'Smartphone', 'iconName': 'phone_android'},
+        {'name': 'Audio', 'iconName': 'headphones'},
+        {'name': 'Gaming', 'iconName': 'sports_esports'},
+        {'name': 'Aksesoris', 'iconName': 'cable'},
+        {'name': 'Storage', 'iconName': 'storage'},
+      ];
+      for (var c in cats) {
+        await db.insert('categories', {
+          ...c,
+          'isActive': 1,
+          'createdAt': now,
+          'updatedAt': now,
+        });
+      }
+    }
+  }
+
+  // ==================== CATEGORIES CRUD ====================
+
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    final db = await database;
+    return await db.query(
+      'categories',
+      where: 'isActive = 1',
+      orderBy: 'name ASC',
+    );
+  }
+
+  Future<int> insertCategory(Map<String, dynamic> data) async {
+    final db = await database;
+    final now = DateTime.now().toIso8601String();
+    data['createdAt'] = now;
+    data['updatedAt'] = now;
+    data['isActive'] = 1;
+    return await db.insert('categories', data);
+  }
+
+  Future<int> updateCategory(int id, Map<String, dynamic> data) async {
+    final db = await database;
+    data['updatedAt'] = DateTime.now().toIso8601String();
+    return await db.update(
+      'categories',
+      data,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteCategory(int id) async {
+    final db = await database;
+    return await db.delete('categories', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<Database> get db => database;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,7 +14,6 @@ class _LoginScreenState extends State<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = AuthService();
   String? _errorMessage;
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -52,13 +52,14 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     String? error;
+    final authProvider = context.read<AuthProvider>();
     if (_isLogin) {
-      error = await _authService.login(
+      error = await authProvider.login(
         _usernameController.text.trim(),
         _passwordController.text,
       );
     } else {
-      error = await _authService.register(
+      error = await authProvider.register(
         _usernameController.text.trim(),
         _passwordController.text,
       );
@@ -67,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen>
     if (!mounted) return;
 
     if (error == null) {
-      final user = await _authService.getCurrentUser();
+      final user = authProvider.currentUser;
       if (!mounted) return;
       if (user != null) {
         final route = user.role == 'admin' ? '/admin-dashboard' : '/user-home';

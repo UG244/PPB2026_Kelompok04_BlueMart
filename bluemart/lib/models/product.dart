@@ -8,6 +8,8 @@ class Product {
   final String? photoPath;
   final int? supplierId;
   final bool isActive;
+  final double weight;
+  final double discountPercent;
   final String createdAt;
   final String updatedAt;
 
@@ -21,6 +23,8 @@ class Product {
     this.photoPath,
     this.supplierId,
     this.isActive = false,
+    this.weight = 0,
+    this.discountPercent = 0,
     String? createdAt,
     String? updatedAt,
   }) : createdAt = createdAt ?? DateTime.now().toIso8601String(),
@@ -37,6 +41,8 @@ class Product {
       'photoPath': photoPath,
       'supplierId': supplierId,
       'isActive': isActive ? 1 : 0,
+      'weight': weight,
+      'discountPercent': discountPercent,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
@@ -53,6 +59,8 @@ class Product {
       photoPath: map['photoPath'] as String?,
       supplierId: map['supplierId'] as int?,
       isActive: (map['isActive'] as int?) == 1,
+      weight: (map['weight'] as num?)?.toDouble() ?? 0,
+      discountPercent: (map['discountPercent'] as num?)?.toDouble() ?? 0,
       createdAt: map['createdAt'] as String?,
       updatedAt: map['updatedAt'] as String?,
     );
@@ -68,6 +76,8 @@ class Product {
     String? photoPath,
     int? supplierId,
     bool? isActive,
+    double? weight,
+    double? discountPercent,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -81,6 +91,8 @@ class Product {
       photoPath: photoPath ?? this.photoPath,
       supplierId: supplierId ?? this.supplierId,
       isActive: isActive ?? this.isActive,
+      weight: weight ?? this.weight,
+      discountPercent: discountPercent ?? this.discountPercent,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now().toIso8601String(),
     );
