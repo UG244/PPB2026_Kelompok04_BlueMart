@@ -21,6 +21,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   AppUser? _user;
   bool _isLoading = true;
   bool _promoVoucherEnabled = false;
+  bool _pushNotificationEnabled = false;
+  bool _orderUpdateEnabled = false;
+  bool _biometricEnabled = false;
+  bool _compactModeEnabled = false;
   int _orderCount = 0;
   int _couponCount = 0;
 
@@ -38,15 +42,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = false;
       });
     }
-    _loadPromoPref();
+    _loadPrefs();
     _loadStats();
   }
 
-  Future<void> _loadPromoPref() async {
+  Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    final enabled = prefs.getBool('promo_voucher_enabled') ?? false;
     if (mounted) {
-      setState(() => _promoVoucherEnabled = enabled);
+      setState(() {
+        _pushNotificationEnabled = prefs.getBool('push_notification_enabled') ?? true;
+        _orderUpdateEnabled = prefs.getBool('order_update_enabled') ?? true;
+        _promoVoucherEnabled = prefs.getBool('promo_voucher_enabled') ?? false;
+        _biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
+        _compactModeEnabled = prefs.getBool('compact_mode_enabled') ?? false;
+      });
     }
   }
 
@@ -65,11 +74,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (_) {}
   }
 
-  Future<void> _togglePromoVoucher(bool value) async {
+  Future<void> _toggleSetting(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('promo_voucher_enabled', value);
+    await prefs.setBool(key, value);
     if (mounted) {
-      setState(() => _promoVoucherEnabled = value);
+      setState(() {
+        switch (key) {
+          case 'push_notification_enabled':
+            _pushNotificationEnabled = value;
+            break;
+          case 'order_update_enabled':
+            _orderUpdateEnabled = value;
+            break;
+          case 'promo_voucher_enabled':
+            _promoVoucherEnabled = value;
+            break;
+          case 'biometric_enabled':
+            _biometricEnabled = value;
+            break;
+          case 'compact_mode_enabled':
+            _compactModeEnabled = value;
+            break;
+        }
+      });
     }
   }
 
@@ -867,18 +894,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
                   _buildSettingsSection('Notifikasi', [
-                    _buildSettingsToggle('Push Notification', true),
-                    _buildSettingsToggle('Update Pesanan', true),
+                    _buildSettingsToggle(
+                      'Push Notification',
+                      _pushNotificationEnabled,
+                      onChanged: (v) => _toggleSetting('push_notification_enabled', v),
+                    ),
+                    _buildSettingsToggle(
+                      'Update Pesanan',
+                      _orderUpdateEnabled,
+                      onChanged: (v) => _toggleSetting('order_update_enabled', v),
+                    ),
                     _buildSettingsToggle(
                       'Promo & Voucher',
                       _promoVoucherEnabled,
-                      onChanged: _togglePromoVoucher,
+                      onChanged: (v) => _toggleSetting('promo_voucher_enabled', v),
                     ),
                   ]),
                   const SizedBox(height: 16),
                   _buildSettingsSection('Keamanan & Tampilan', [
-                    _buildSettingsToggle('Kunci Biometrik', false),
-                    _buildSettingsToggle('Mode Ringkas', false),
+                    _buildSettingsToggle(
+                      'Kunci Biometrik',
+                      _biometricEnabled,
+                      onChanged: (v) => _toggleSetting('biometric_enabled', v),
+                    ),
+                    _buildSettingsToggle(
+                      'Mode Ringkas',
+                      _compactModeEnabled,
+                      onChanged: (v) => _toggleSetting('compact_mode_enabled', v),
+                    ),
                   ]),
                   const SizedBox(height: 16),
                   _buildSettingsSection('Preferensi', [

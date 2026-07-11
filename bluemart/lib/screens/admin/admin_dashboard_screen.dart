@@ -3,6 +3,10 @@ import '../../services/product_service.dart';
 import '../../services/transaction_service.dart';
 import '../../models/product.dart';
 import '../../utils/constants.dart';
+import 'admin_product_list_screen.dart';
+import 'admin_coupon_screen.dart';
+import 'admin_qris_screen.dart';
+import 'admin_sales_report_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -26,10 +30,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _initData();
-  }
-
-  Future<void> _initData() async {
     _loadDashboardData();
   }
 
@@ -63,319 +63,305 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
+  Widget _buildDashboardContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadDashboardData,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Welcome header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.store_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'BlueMart Admin',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Halo, Admin!',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.refresh,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                      onPressed: _loadDashboardData,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Summary cards
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  icon: Icons.inventory_2,
+                  title: 'Total Produk',
+                  value: '$_totalProducts',
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  icon: Icons.inventory,
+                  title: 'Total Stok',
+                  value: '$_totalStock',
+                  color: Colors.green,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryCard(
+                  icon: Icons.warning_amber,
+                  title: 'Stok Menipis',
+                  value: '$_lowStockCount',
+                  color: _lowStockCount > 0 ? Colors.orange : Colors.grey,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSummaryCard(
+                  icon: Icons.receipt_long,
+                  title: 'Transaksi',
+                  value: '$_totalTransactions',
+                  color: Colors.purple,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildSummaryCard(
+            icon: Icons.monetization_on,
+            title: 'Total Pendapatan',
+            value: 'Rp ${_formatPrice(_totalRevenue)}',
+            color: Colors.teal,
+          ),
+          const SizedBox(height: 24),
+
+          // Quick actions
+          const Text(
+            'Aksi Cepat',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _buildQuickAction(
+                icon: Icons.add_box,
+                label: 'Tambah Produk',
+                color: const Color(0xFF3B82F6),
+                onTap: () async {
+                  final result = await Navigator.pushNamed(
+                    context,
+                    '/admin-product-form',
+                    arguments: null,
+                  );
+                  if (result == true) _loadDashboardData();
+                },
+              ),
+              _buildQuickAction(
+                icon: Icons.list_alt,
+                label: 'Lihat Produk',
+                color: const Color(0xFF22C55E),
+                onTap: () => setState(() => _currentNavIndex = 1),
+              ),
+              _buildQuickAction(
+                icon: Icons.receipt,
+                label: 'Laporan',
+                color: const Color(0xFF8B5CF6),
+                onTap: () => setState(() => _currentNavIndex = 4),
+              ),
+              _buildQuickAction(
+                icon: Icons.discount,
+                label: 'Kupon Diskon',
+                color: const Color(0xFFF97316),
+                onTap: () => setState(() => _currentNavIndex = 2),
+              ),
+              _buildQuickAction(
+                icon: Icons.payment,
+                label: 'Pembayaran',
+                color: const Color(0xFFEC4899),
+                onTap: () => Navigator.pushNamed(context, '/admin-payment'),
+              ),
+              _buildQuickAction(
+                icon: Icons.qr_code,
+                label: 'QRIS',
+                color: const Color(0xFF06B6D4),
+                onTap: () => setState(() => _currentNavIndex = 3),
+              ),
+              _buildQuickAction(
+                icon: Icons.history,
+                label: 'Riwayat',
+                color: const Color(0xFF6366F1),
+                onTap: () => Navigator.pushNamed(context, '/user-orders'),
+              ),
+              _buildQuickAction(
+                icon: Icons.people,
+                label: 'Manajemen User',
+                color: const Color(0xFF0EA5E9),
+                onTap: () => Navigator.pushNamed(context, '/admin-users'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Recent Products
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Produk Terbaru',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              TextButton.icon(
+                onPressed: () => setState(() => _currentNavIndex = 1),
+                icon: const Icon(Icons.arrow_forward, size: 16),
+                label: const Text('Lihat Semua'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_recentProducts.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 40,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Belum ada produk',
+                      style: TextStyle(color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ..._recentProducts.map(
+              (product) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  leading: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.shopping_bag,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  title: Text(
+                    product.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    'Stok: ${product.stock} | ${product.category}',
+                  ),
+                  trailing: Text(
+                    'Rp ${_formatPrice(product.price)}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard Admin'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => Navigator.pushNamed(context, '/profile'),
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadDashboardData,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // Welcome header
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF1E3A8A).withValues(alpha: 0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(
-                                Icons.store_rounded,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'BlueMart Admin',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Halo, Admin!',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.85,
-                                      ),
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.refresh,
-                                color: Colors.white.withValues(alpha: 0.85),
-                              ),
-                              onPressed: _loadDashboardData,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Summary cards
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildSummaryCard(
-                          icon: Icons.inventory_2,
-                          title: 'Total Produk',
-                          value: '$_totalProducts',
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildSummaryCard(
-                          icon: Icons.inventory,
-                          title: 'Total Stok',
-                          value: '$_totalStock',
-                          color: Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildSummaryCard(
-                          icon: Icons.warning_amber,
-                          title: 'Stok Menipis',
-                          value: '$_lowStockCount',
-                          color: _lowStockCount > 0
-                              ? Colors.orange
-                              : Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildSummaryCard(
-                          icon: Icons.receipt_long,
-                          title: 'Transaksi',
-                          value: '$_totalTransactions',
-                          color: Colors.purple,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildSummaryCard(
-                    icon: Icons.monetization_on,
-                    title: 'Total Pendapatan',
-                    value: 'Rp ${_formatPrice(_totalRevenue)}',
-                    color: Colors.teal,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Quick actions
-                  Text(
-                    'Aksi Cepat',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      _buildQuickAction(
-                        icon: Icons.add_box,
-                        label: 'Tambah Produk',
-                        color: const Color(0xFF3B82F6),
-                        onTap: () async {
-                          final result = await Navigator.pushNamed(
-                            context,
-                            '/admin-product-form',
-                            arguments: null,
-                          );
-                          if (result == true) _loadDashboardData();
-                        },
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.list_alt,
-                        label: 'Lihat Produk',
-                        color: const Color(0xFF22C55E),
-                        onTap: () async {
-                          await Navigator.pushNamed(context, '/admin-products');
-                          _loadDashboardData();
-                        },
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.receipt,
-                        label: 'Laporan',
-                        color: const Color(0xFF8B5CF6),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/admin-sales-report'),
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.discount,
-                        label: 'Kupon Diskon',
-                        color: const Color(0xFFF97316),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/admin-coupon'),
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.payment,
-                        label: 'Pembayaran',
-                        color: const Color(0xFFEC4899),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/admin-payment'),
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.qr_code,
-                        label: 'QRIS',
-                        color: const Color(0xFF06B6D4),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/admin-qris'),
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.history,
-                        label: 'Riwayat',
-                        color: const Color(0xFF6366F1),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/user-orders'),
-                      ),
-                      _buildQuickAction(
-                        icon: Icons.people,
-                        label: 'Manajemen User',
-                        color: const Color(0xFF0EA5E9),
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/admin-users'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Recent Products
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Produk Terbaru',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () async {
-                          await Navigator.pushNamed(context, '/admin-products');
-                          _loadDashboardData();
-                        },
-                        icon: const Icon(Icons.arrow_forward, size: 16),
-                        label: const Text('Lihat Semua'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_recentProducts.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.inventory_2_outlined,
-                              size: 40,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Belum ada produk',
-                              style: TextStyle(color: Colors.grey[500]),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    ..._recentProducts.map(
-                      (product) => Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          leading: Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.shopping_bag,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          title: Text(
-                            product.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            'Stok: ${product.stock} | ${product.category}',
-                          ),
-                          trailing: Text(
-                            'Rp ${_formatPrice(product.price)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E3A8A),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+      appBar: _currentNavIndex == 0
+          ? AppBar(
+              title: const Text('Dashboard Admin'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.person),
+                  onPressed: () => Navigator.pushNamed(context, '/profile'),
+                ),
+              ],
+            )
+          : null,
+      body: _buildBody(),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -390,23 +376,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           currentIndex: _currentNavIndex,
           onTap: (index) {
             setState(() => _currentNavIndex = index);
-            switch (index) {
-              case 0:
-                // Already on dashboard
-                break;
-              case 1:
-                Navigator.pushNamed(context, '/admin-products');
-                break;
-              case 2:
-                Navigator.pushNamed(context, '/admin-coupon');
-                break;
-              case 3:
-                Navigator.pushNamed(context, '/admin-qris');
-                break;
-              case 4:
-                Navigator.pushNamed(context, '/admin-sales-report');
-                break;
-            }
           },
           type: BottomNavigationBarType.fixed,
           selectedItemColor: const Color(0xFF1E3A8A),
@@ -445,6 +414,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildBody() {
+    switch (_currentNavIndex) {
+      case 0:
+        return _buildDashboardContent();
+      case 1:
+        return const AdminProductListScreen();
+      case 2:
+        return const AdminCouponScreen();
+      case 3:
+        return const AdminQrisScreen();
+      case 4:
+        return const AdminSalesReportScreen();
+      default:
+        return _buildDashboardContent();
+    }
   }
 
   Widget _buildSummaryCard({
