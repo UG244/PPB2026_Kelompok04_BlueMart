@@ -79,6 +79,12 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         category: _category,
         price: price,
         stock: stock,
+<<<<<<< Updated upstream
+=======
+        initialStock: stock,
+        photoPath: _photoPath,
+        isActive: true,
+>>>>>>> Stashed changes
       );
       await _productService.updateProduct(updated);
     } else {

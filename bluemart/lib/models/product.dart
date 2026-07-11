@@ -5,6 +5,7 @@ class Product {
   final double price;
   final double? originalPrice;
   final int stock;
+  final int initialStock;
   final String? photoPath;
   final int? supplierId;
   final bool isActive;
@@ -22,6 +23,7 @@ class Product {
     required this.price,
     this.originalPrice,
     required this.stock,
+    int? initialStock,
     this.photoPath,
     this.supplierId,
     this.isActive = false,
@@ -31,7 +33,8 @@ class Product {
     this.weight,
     String? createdAt,
     String? updatedAt,
-  }) : createdAt = createdAt ?? DateTime.now().toIso8601String(),
+  }) : initialStock = initialStock ?? stock,
+       createdAt = createdAt ?? DateTime.now().toIso8601String(),
        updatedAt = updatedAt ?? DateTime.now().toIso8601String();
 
   Map<String, dynamic> toMap() {
@@ -42,6 +45,7 @@ class Product {
       'price': price,
       'originalPrice': originalPrice,
       'stock': stock,
+      'initialStock': initialStock,
       'photoPath': photoPath,
       'supplierId': supplierId,
       'isActive': isActive ? 1 : 0,
@@ -56,12 +60,22 @@ class Product {
 
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
+<<<<<<< Updated upstream
       id: map['id'] as int?,
       name: map['name'] as String,
       category: map['category'] as String,
       price: (map['price'] as num).toDouble(),
       originalPrice: (map['originalPrice'] as num?)?.toDouble(),
       stock: map['stock'] as int,
+=======
+      id: (map['id'] as num?)?.toInt(),
+      name: map['name'] as String? ?? '',
+      description: (map['description'] as String?) ?? '',
+      category: map['category'] as String? ?? 'Umum',
+      price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      stock: (map['stock'] as num?)?.toInt() ?? 0,
+      initialStock: (map['initialStock'] as num?)?.toInt() ?? (map['stock'] as num?)?.toInt() ?? 0,
+>>>>>>> Stashed changes
       photoPath: map['photoPath'] as String?,
       supplierId: map['supplierId'] as int?,
       isActive: (map['isActive'] as int?) == 1,
@@ -81,6 +95,7 @@ class Product {
     double? price,
     double? originalPrice,
     int? stock,
+    int? initialStock,
     String? photoPath,
     int? supplierId,
     bool? isActive,
@@ -98,6 +113,7 @@ class Product {
       price: price ?? this.price,
       originalPrice: originalPrice ?? this.originalPrice,
       stock: stock ?? this.stock,
+      initialStock: initialStock ?? this.initialStock,
       photoPath: photoPath ?? this.photoPath,
       supplierId: supplierId ?? this.supplierId,
       isActive: isActive ?? this.isActive,

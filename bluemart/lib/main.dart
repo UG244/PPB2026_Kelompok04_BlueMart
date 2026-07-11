@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'utils/notification_helper.dart';
 import 'services/auth_service.dart';
 import 'services/cart_service.dart';
 import 'providers/favorite_provider.dart';
@@ -41,6 +42,7 @@ class BlueMartApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'BlueMart',
+      navigatorKey: NotificationHelper.navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const SplashScreen(),

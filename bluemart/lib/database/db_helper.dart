@@ -21,7 +21,11 @@ class DbHelper {
 
     return await openDatabase(
       path,
+<<<<<<< Updated upstream
       version: 1,
+=======
+      version: 4,
+>>>>>>> Stashed changes
       onCreate: _onCreate,
     );
   }
@@ -34,6 +38,7 @@ class DbHelper {
         category TEXT NOT NULL,
         price REAL NOT NULL,
         stock INTEGER NOT NULL,
+        initialStock INTEGER NOT NULL DEFAULT 0,
         photoPath TEXT,
         supplierId INTEGER,
         isActive INTEGER NOT NULL DEFAULT 0,
@@ -65,6 +70,67 @@ class DbHelper {
         FOREIGN KEY (productId) REFERENCES products(id)
       )
     ''');
+<<<<<<< Updated upstream
+=======
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS coupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discount TEXT NOT NULL,
+        discountPercent REAL DEFAULT 0,
+        minPurchase REAL NOT NULL,
+        freeShipping INTEGER NOT NULL DEFAULT 0,
+        expiry TEXT NOT NULL,
+        uses INTEGER DEFAULT 0,
+        maxUses INTEGER DEFAULT 100,
+        isActive INTEGER NOT NULL DEFAULT 1,
+        createdAt TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add description column if upgrading from v1
+      try {
+        await db.execute(
+          'ALTER TABLE products ADD COLUMN description TEXT DEFAULT ""',
+        );
+      } catch (_) {
+        // Column might already exist
+      }
+    }
+    if (oldVersion < 3) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS coupons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
+            discount TEXT NOT NULL,
+            discountPercent REAL DEFAULT 0,
+            minPurchase REAL NOT NULL,
+            freeShipping INTEGER NOT NULL DEFAULT 0,
+            expiry TEXT NOT NULL,
+            uses INTEGER DEFAULT 0,
+            maxUses INTEGER DEFAULT 100,
+            isActive INTEGER NOT NULL DEFAULT 1,
+            createdAt TEXT NOT NULL
+          )
+        ''');
+      } catch (_) {}
+    }
+    if (oldVersion < 4) {
+      try {
+        await db.execute(
+          'ALTER TABLE products ADD COLUMN initialStock INTEGER NOT NULL DEFAULT 0',
+        );
+        await db.execute(
+          'UPDATE products SET initialStock = stock',
+        );
+      } catch (_) {}
+    }
+>>>>>>> Stashed changes
   }
 
   // ==================== PRODUCT CRUD ====================

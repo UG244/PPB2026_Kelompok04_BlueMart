@@ -16,6 +16,75 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
   bool _isLoading = false;
   bool _obscurePassword = true;
+<<<<<<< Updated upstream
+=======
+  bool _isBiometricEnabled = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometric();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
+    _animationController.forward();
+  }
+
+  Future<void> _checkBiometric() async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('biometric_enabled') ?? false;
+    if (mounted) {
+      setState(() => _isBiometricEnabled = enabled);
+    }
+  }
+
+  Future<void> _handleBiometricLogin() async {
+    final verified = await BiometricService().authenticate(
+      context: context,
+      localizedReason: 'Sentuh sensor sidik jari Anda untuk login ke akun BlueMart',
+    );
+
+    if (verified == true && mounted) {
+      setState(() => _isLoading = true);
+      final prefs = await SharedPreferences.getInstance();
+      final lastUsername = prefs.getString('last_username') ?? 'user1';
+      final lastPassword = prefs.getString('last_password') ?? 'user123';
+      
+      final error = await _authService.login(lastUsername, lastPassword);
+      if (!mounted) return;
+
+      if (error == null) {
+        final user = await _authService.getCurrentUser();
+        if (!mounted) return;
+        if (user != null) {
+          if (user.role == 'admin') {
+            Navigator.pushNamedAndRemoveUntil(context, '/admin-dashboard', (route) => false);
+          } else {
+            Navigator.pushNamedAndRemoveUntil(context, '/user-home', (route) => false);
+          }
+        } else {
+          setState(() => _isLoading = false);
+        }
+      } else {
+        setState(() {
+          _errorMessage = error;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+>>>>>>> Stashed changes
 
   @override
   void dispose() {
@@ -43,6 +112,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = await _authService.getCurrentUser();
       if (!mounted) return;
       if (user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('last_username', _usernameController.text.trim());
+        await prefs.setString('last_password', _passwordController.text);
+
         if (user.role == 'admin') {
           Navigator.pushNamedAndRemoveUntil(context, '/admin-dashboard', (route) => false);
         } else {

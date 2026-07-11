@@ -1,6 +1,7 @@
 import '../database/db_helper.dart';
 import '../models/cart_item.dart';
 import '../services/firestore_service.dart';
+import '../utils/notification_helper.dart';
 
 class TransactionService {
   final DbHelper _dbHelper = DbHelper();
@@ -83,6 +84,25 @@ class TransactionService {
       } catch (_) {
         // Firestore sync failure is non-critical
       }
+
+      // Check low stock and trigger notification
+      for (final item in cartItems) {
+        try {
+          final product = await _dbHelper.getProductById(item.productId);
+          if (product != null) {
+            if (product.stock > 0 && product.stock <= (product.initialStock * 0.1)) {
+              NotificationHelper.showLowStockNotification(
+                product.name,
+                product.stock,
+                product.initialStock,
+              );
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Trigger realtime order notification
+      NotificationHelper.showOrderNotification(buyerUsername, totalAmount);
 
       return {'success': true, 'message': 'Pembayaran berhasil!'};
     } catch (e) {
