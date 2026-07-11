@@ -6,20 +6,17 @@
     "configurations": [
         {
             "name": "bluemart",
-            "cwd": "bluemart",
             "request": "launch",
             "type": "dart"
         },
         {
             "name": "bluemart (profile mode)",
-            "cwd": "bluemart",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
             "name": "bluemart (release mode)",
-            "cwd": "bluemart",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
