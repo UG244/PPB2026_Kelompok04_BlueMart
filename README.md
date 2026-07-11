@@ -241,7 +241,7 @@ Aplikasi ini telah memenuhi seluruh kriteria penilaian:
 ## 📄 Lisensi
 
 **© 2026 Kelompok 04 — Teknologi Informasi**  
-Program Studi Teknologi Informasi — Universitas [Nama Universitas]  
+Program Studi Teknologi Informasi — ITB STIKOM Bali  
 Project ini disubmit untuk memenuhi tugas akhir mata kuliah Pemrograman Piranti Bergerak (TI253311)
 
 **Kontak:**
