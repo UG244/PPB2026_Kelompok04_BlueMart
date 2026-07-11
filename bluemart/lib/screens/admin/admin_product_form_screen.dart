@@ -292,7 +292,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
               // Category dropdown
               DropdownButtonFormField<String>(
-                value: _categories.contains(_category)
+                initialValue: _categories.contains(_category)
                     ? _category
                     : _categories.first,
                 decoration: const InputDecoration(

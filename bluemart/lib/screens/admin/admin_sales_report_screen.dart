@@ -199,7 +199,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: currentStatus,
+                        initialValue: currentStatus,
                         decoration: const InputDecoration(
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(

@@ -43,11 +43,12 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
       final prefs = await SharedPreferences.getInstance();
       final ids = prefs.getStringList(_favKey) ?? [];
       if (ids.isEmpty) {
-        if (mounted)
+        if (mounted) {
           setState(() {
             _favoriteProducts = [];
             _isLoading = false;
           });
+        }
         return;
       }
 

@@ -149,6 +149,16 @@ class UserCartScreen extends StatelessWidget {
                           padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
+                              Checkbox(
+                                value: item.isSelected,
+                                onChanged: (value) {
+                                  cart.toggleSelection(item.productId);
+                                },
+                                activeColor: const Color(0xFF1E3A8A),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
                               // Photo
                               Container(
                                 width: 60,
@@ -272,7 +282,7 @@ class UserCartScreen extends StatelessWidget {
 
               // Bottom total bar
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -286,38 +296,53 @@ class UserCartScreen extends StatelessWidget {
                 child: SafeArea(
                   child: Row(
                     children: [
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: cart.isAllSelected,
+                            onChanged: (value) {
+                              if (value != null) cart.selectAll(value);
+                            },
+                            activeColor: const Color(0xFF1E3A8A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const Text('Semua', style: TextStyle(fontSize: 13)),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Total: Rp ${_formatPrice(cart.totalPrice)}',
+                              'Total: Rp ${_formatPrice(cart.selectedTotalPrice)}',
                               style: const TextStyle(
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              '${cart.uniqueItemCount} item (${cart.itemCount} unit)',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
+                                color: Color(0xFF1E3A8A),
                               ),
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 12),
                       ElevatedButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, '/user-checkout'),
+                        onPressed: cart.selectedItems.isEmpty
+                            ? null
+                            : () => Navigator.pushNamed(context, '/user-checkout'),
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E3A8A),
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 12,
                           ),
+                          disabledBackgroundColor: Colors.grey[300],
                         ),
-                        child: const Text('Checkout'),
+                        child: Text('Checkout (${cart.selectedItemCount})'),
                       ),
                     ],
                   ),

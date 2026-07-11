@@ -4,6 +4,7 @@ class CartItem {
   double unitPrice;
   int quantity;
   final String? photoPath;
+  bool isSelected;
 
   CartItem({
     required this.productId,
@@ -11,6 +12,7 @@ class CartItem {
     required this.unitPrice,
     required this.quantity,
     this.photoPath,
+    this.isSelected = true,
   });
 
   double get subtotal => unitPrice * quantity;

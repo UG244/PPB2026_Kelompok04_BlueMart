@@ -274,10 +274,12 @@ class _LoginScreenState extends State<LoginScreen>
                         textInputAction: TextInputAction.done,
                         onFieldSubmitted: (_) => _handleSubmit(),
                         validator: (v) {
-                          if (v == null || v.isEmpty)
+                          if (v == null || v.isEmpty) {
                             return 'Password tidak boleh kosong';
-                          if (!_isLogin && v.length < 4)
+                          }
+                          if (!_isLogin && v.length < 4) {
                             return 'Password minimal 4 karakter';
+                          }
                           return null;
                         },
                       ),

@@ -58,31 +58,13 @@ class UserHomeScreenState extends State<UserHomeScreen> {
 
   final List<Map<String, dynamic>> _categories = [
     {'name': 'Laptop', 'icon': Icons.laptop, 'color': const Color(0xFF3B82F6)},
-    {
-      'name': 'Smartphone',
-      'icon': Icons.phone_android,
-      'color': const Color(0xFF22C55E),
-    },
-    {
-      'name': 'Audio',
-      'icon': Icons.headphones,
-      'color': const Color(0xFFF97316),
-    },
-    {
-      'name': 'Gaming',
-      'icon': Icons.sports_esports,
-      'color': const Color(0xFFEF4444),
-    },
-    {
-      'name': 'Aksesoris',
-      'icon': Icons.cable,
-      'color': const Color(0xFF8B5CF6),
-    },
-    {
-      'name': 'Storage',
-      'icon': Icons.storage,
-      'color': const Color(0xFFEC4899),
-    },
+    {'name': 'Smartphone', 'icon': Icons.phone_android, 'color': const Color(0xFF22C55E)},
+    {'name': 'Audio', 'icon': Icons.headphones, 'color': const Color(0xFFF97316)},
+    {'name': 'Gaming', 'icon': Icons.sports_esports, 'color': const Color(0xFFEF4444)},
+    {'name': 'Aksesoris', 'icon': Icons.cable, 'color': const Color(0xFF8B5CF6)},
+    {'name': 'Storage', 'icon': Icons.storage, 'color': const Color(0xFFEC4899)},
+    {'name': 'Kamera', 'icon': Icons.camera_alt, 'color': const Color(0xFF14B8A6)},
+    {'name': 'Lainnya', 'icon': Icons.grid_view, 'color': const Color(0xFF64748B)},
   ];
 
   List<String> get _productCategories {
@@ -120,10 +102,11 @@ class UserHomeScreenState extends State<UserHomeScreen> {
 
   Future<void> _loadPromoSetting() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted)
+    if (mounted) {
       setState(
         () => _promoEnabled = prefs.getBool('promo_voucher_enabled') ?? false,
       );
+    }
   }
 
   Future<void> _loadBanners() async {
@@ -161,11 +144,12 @@ class UserHomeScreenState extends State<UserHomeScreen> {
   Future<void> _loadProducts() async {
     setState(() => _isLoading = true);
     final products = await _productService.getActiveProducts();
-    if (mounted)
+    if (mounted) {
       setState(() {
         _products = products;
         _isLoading = false;
       });
+    }
   }
 
   /// Debounced search with 300ms delay (per spec).
@@ -181,12 +165,14 @@ class UserHomeScreenState extends State<UserHomeScreen> {
   List<Product> get filteredProducts {
     final query = _searchQuery.toLowerCase();
     var result = _products;
-    if (_selectedCategory != 'Semua')
+    if (_selectedCategory != 'Semua') {
       result = result.where((p) => p.category == _selectedCategory).toList();
-    if (query.isNotEmpty)
+    }
+    if (query.isNotEmpty) {
       result = result
           .where((p) => p.name.toLowerCase().contains(query))
           .toList();
+    }
     return result;
   }
 
@@ -236,19 +222,35 @@ class UserHomeScreenState extends State<UserHomeScreen> {
       child: CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: const Row(
-              children: [
-                Icon(Icons.store_rounded, size: 22),
-                SizedBox(width: 8),
-                Text('BlueMart', style: TextStyle(fontSize: 18)),
-              ],
+            pinned: true,
+            floating: true,
+            backgroundColor: const Color(0xFF1E3A8A), // Theme color as sticky header background
+            titleSpacing: 16,
+            title: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(fontSize: 14),
+                decoration: const InputDecoration(
+                  hintText: 'Cari di BlueMart',
+                  hintStyle: TextStyle(fontSize: 14, color: Colors.grey),
+                  prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
+                onChanged: _onSearchChanged,
+              ),
             ),
             actions: [
               Consumer<NotificationProvider>(
                 builder: (ctx, notif, _) => Stack(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.notifications_outlined),
+                      icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                       onPressed: () =>
                           Navigator.pushNamed(ctx, '/user-notifications'),
                     ),
@@ -286,7 +288,7 @@ class UserHomeScreenState extends State<UserHomeScreen> {
                 builder: (context, cart, _) => Stack(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.shopping_cart_outlined),
+                      icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
                       onPressed: () =>
                           Navigator.pushNamed(context, '/user-cart'),
                     ),
@@ -323,64 +325,24 @@ class UserHomeScreenState extends State<UserHomeScreen> {
           SliverToBoxAdapter(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Cari laptop, smartphone...',
-                        prefixIcon: const Icon(Icons.search, size: 20),
-                        suffixIcon: GestureDetector(
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/barcode-scanner'),
-                          child: Container(
-                            margin: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E3A8A),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.qr_code_scanner,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF1E3A8A),
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                      onChanged: _onSearchChanged,
-                    ),
+                // Wallet / Menu Quick Actions (ShopeePay style)
+                Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildQuickAction(Icons.qr_code_scanner, 'Scan'),
+                      Container(width: 1, height: 24, color: Colors.grey[300]),
+                      _buildQuickAction(Icons.account_balance_wallet, 'BluePay\nRp 150.000'),
+                      Container(width: 1, height: 24, color: Colors.grey[300]),
+                      _buildQuickAction(Icons.monetization_on, 'Koin\n5.000'),
+                      Container(width: 1, height: 24, color: Colors.grey[300]),
+                      _buildQuickAction(Icons.card_giftcard, 'Transfer'),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 8),
                 if (_promoEnabled) _buildBannerCarousel(),
                 _buildCategoriesSection(),
                 Padding(
@@ -397,11 +359,11 @@ class UserHomeScreenState extends State<UserHomeScreen> {
                           ),
                           SizedBox(width: 6),
                           Text(
-                            'Produk Terbaru',
+                            'REKOMENDASI',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
+                              color: Color(0xFF1E3A8A),
                             ),
                           ),
                         ],
@@ -512,6 +474,21 @@ class UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildQuickAction(IconData icon, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 24, color: const Color(0xFF1E3A8A)),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+        ),
+      ],
     );
   }
 
@@ -649,80 +626,47 @@ class UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Widget _buildCategoriesSection() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Kategori Pilihan',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              Text(
-                'Lihat Semua',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF3B82F6),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 85,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 14),
-              itemBuilder: (ctx, index) {
-                final cat = _categories[index];
-                return GestureDetector(
-                  onTap: () =>
-                      setState(() => _selectedCategory = cat['name'] as String),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: (cat['color'] as Color).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: (cat['color'] as Color).withValues(
-                              alpha: 0.2,
-                            ),
-                          ),
-                        ),
-                        child: Icon(
-                          cat['icon'] as IconData,
-                          color: cat['color'] as Color,
-                          size: 26,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        cat['name'] as String,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF475569),
-                        ),
-                      ),
-                    ],
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: GridView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 8,
+          childAspectRatio: 0.9,
+        ),
+        itemCount: _categories.length,
+        itemBuilder: (ctx, index) {
+          final cat = _categories[index];
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = cat['name'] as String),
+            child: Column(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: (cat['color'] as Color).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                );
-              },
+                  child: Icon(cat['icon'] as IconData, color: cat['color'] as Color, size: 24),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  cat['name'] as String,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF475569)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

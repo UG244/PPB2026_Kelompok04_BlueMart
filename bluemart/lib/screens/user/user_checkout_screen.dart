@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import '../../models/cart_item.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/checkout_address.dart';
@@ -123,7 +125,7 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
     return (m['cost'] as num).toDouble();
   }
 
-  double get _subtotal => context.read<CartService>().totalPrice;
+  double get _subtotal => context.read<CartService>().selectedTotalPrice;
 
   double get _discount {
     if (_promoCode == null) return 0;
@@ -159,7 +161,7 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
       appBar: AppBar(title: const Text('Konfirmasi Pesanan')),
       body: Consumer<CartService>(
         builder: (context, cart, _) {
-          if (cart.items.isEmpty && _resultMessage == null) {
+          if (cart.selectedItems.isEmpty && _resultMessage == null) {
             return Center(
               child: Column(
                 children: [
@@ -204,6 +206,10 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
                       onTap: () => _selectAddress(),
                     )
                   : _buildSelectAddressCard(),
+              const SizedBox(height: 20),
+              _buildSectionTitle('Barang yang Dibeli'),
+              const SizedBox(height: 8),
+              ...cart.selectedItems.map((item) => _buildCheckoutItem(item)),
               const SizedBox(height: 20),
               _buildSectionTitle('Metode Pengiriman'),
               const SizedBox(height: 8),
@@ -1107,8 +1113,9 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
     }
     final p = await _dbHelper.getPromoCodeByCode(code);
     if (p != null) {
-      if (!_availablePromos.any((x) => x['code'] == code))
+      if (!_availablePromos.any((x) => x['code'] == code)) {
         _availablePromos.add(p);
+      }
       setState(() => _promoCode = code);
       _showMsg('Promo "$code" berhasil diterapkan!', Colors.green);
     } else {
@@ -1123,7 +1130,7 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
   }
 
   void _showMsg(String msg, MaterialColor color) {
-    if (mounted)
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg),
@@ -1131,6 +1138,7 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
           backgroundColor: color,
         ),
       );
+    }
   }
 
   Future<void> _confirmCheckout() async {
@@ -1146,7 +1154,7 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
     try {
       final r = await txn.checkout(
         buyerUsername: user.username,
-        cartItems: cart.items,
+        cartItems: cart.selectedItems,
         totalAmount: _grandTotal,
       );
       if (mounted) {
@@ -1156,7 +1164,7 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
           _resultMessage = r['message'] as String?;
         });
         if (_success) {
-          cart.clearCart();
+          cart.removeSelectedItems();
           // Fire success notification
           try {
             final notif = context.read<NotificationProvider>();
@@ -1169,12 +1177,13 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
         }
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isProcessing = false;
           _success = false;
           _resultMessage = 'Terjadi kesalahan: $e';
         });
+      }
     }
   }
 
@@ -1184,6 +1193,63 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
         RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
         (m) => '${m.group(1)}.',
       );
+
+  Widget _buildCheckoutItem(CartItem item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: item.photoPath != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      File(item.photoPath!),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(Icons.image, color: Colors.grey),
+                    ),
+                  )
+                : const Icon(Icons.image, color: Colors.grey),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.productName,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Rp ${_formatPrice(item.unitPrice)}',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            'x${item.quantity}',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AddressCard extends StatelessWidget {
@@ -1195,14 +1261,34 @@ class _AddressCard extends StatelessWidget {
     onTap: onTap,
     borderRadius: BorderRadius.circular(14),
     child: Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF1E3A8A), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
         children: [
+          // Stripe border top
+          Container(
+            height: 4,
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+              gradient: LinearGradient(
+                colors: [Color(0xFFEF4444), Color(0xFF3B82F6), Color(0xFFEF4444)],
+                stops: [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
           Container(
             width: 44,
             height: 44,
@@ -1268,8 +1354,11 @@ class _AddressCard extends StatelessWidget {
             onPressed: () {},
           ),
         ],
+       ),
       ),
+     ],
     ),
+   ),
   );
 }
 
