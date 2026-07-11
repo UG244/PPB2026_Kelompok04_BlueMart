@@ -1298,7 +1298,7 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
             children: [
               Icon(Icons.lock_outline, color: Color(0xFF1E3A8A)),
               SizedBox(width: 8),
-              Text('Konfirmasi PIN/Password'),
+              Expanded(child: Text('Konfirmasi PIN/Password')),
             ],
           ),
           content: Column(

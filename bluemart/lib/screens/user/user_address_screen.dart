@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import '../../models/checkout_address.dart';
 
 class UserAddressScreen extends StatefulWidget {
@@ -214,40 +217,100 @@ class _UserAddressScreenState extends State<UserAddressScreen> {
     final recipientController = TextEditingController();
     final addressController = TextEditingController();
     final phoneController = TextEditingController();
+    bool isLocating = false;
+
+    Future<void> fetchLocation(StateSetter setDialogState) async {
+      const String defaultAddress = 'ITB STIKOM BALI RENON, Jl. Raya Puputan No.86, Dangin Puri Klod, Kec. Denpasar Tim., Kota Denpasar, Bali 80234';
+      
+      setDialogState(() => isLocating = true);
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) throw Exception('Service disabled');
+
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) throw Exception('Permission denied');
+        }
+        if (permission == LocationPermission.deniedForever) throw Exception('Permission denied forever');
+
+        Position position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+
+        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}');
+        final response = await http.get(url, headers: {'User-Agent': 'BlueMart/1.0'});
+
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final displayName = data['display_name'];
+          if (displayName != null && displayName.isNotEmpty) {
+            addressController.text = displayName;
+          } else {
+            addressController.text = defaultAddress;
+          }
+        } else {
+          addressController.text = defaultAddress;
+        }
+      } catch (e) {
+        addressController.text = defaultAddress;
+      } finally {
+        if (mounted) {
+          setDialogState(() => isLocating = false);
+        }
+      }
+    }
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Tambah Alamat Baru'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: labelController,
-                decoration: const InputDecoration(
-                  labelText: 'Label',
-                  hintText: 'Rumah/Kantor',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Tambah Alamat Baru'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: isLocating ? null : () => fetchLocation(setDialogState),
+                  icon: isLocating 
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.my_location, size: 18),
+                  label: Text(isLocating ? 'Mencari Lokasi...' : 'Gunakan Lokasi Saat Ini'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1E3A8A),
+                    side: const BorderSide(color: Color(0xFF1E3A8A)),
+                  ),
                 ),
-              ),
-              TextField(
-                controller: recipientController,
-                decoration: const InputDecoration(labelText: 'Nama Penerima'),
-              ),
-              TextField(
-                controller: addressController,
-                decoration: const InputDecoration(labelText: 'Alamat Lengkap'),
-                maxLines: 3,
-              ),
-              TextField(
-                controller: phoneController,
-                decoration: const InputDecoration(labelText: 'Nomor Telepon'),
-              ),
-            ],
+                const SizedBox(height: 8),
+                TextField(
+                  controller: labelController,
+                  decoration: const InputDecoration(
+                    labelText: 'Label',
+                    hintText: 'Rumah/Kantor',
+                  ),
+                ),
+                TextField(
+                  controller: recipientController,
+                  decoration: const InputDecoration(labelText: 'Nama Penerima'),
+                ),
+                TextField(
+                  controller: addressController,
+                  decoration: const InputDecoration(labelText: 'Alamat Lengkap'),
+                  maxLines: 3,
+                ),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(labelText: 'Nomor Telepon'),
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
+          actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Batal'),
@@ -277,6 +340,7 @@ class _UserAddressScreenState extends State<UserAddressScreen> {
             child: const Text('Simpan'),
           ),
         ],
+      ),
       ),
     );
   }
