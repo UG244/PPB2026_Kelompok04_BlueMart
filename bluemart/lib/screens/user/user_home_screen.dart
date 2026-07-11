@@ -1,10 +1,14 @@
 import 'dart:io';
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/product.dart';
 import '../../models/cart_item.dart';
 import '../../services/product_service.dart';
 import '../../services/cart_service.dart';
+import '../../services/sensor_service.dart';
 
 class UserHomeScreen extends StatefulWidget {
   const UserHomeScreen({super.key});
@@ -15,6 +19,9 @@ class UserHomeScreen extends StatefulWidget {
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
   final _productService = ProductService();
+  final _sensorService = SensorService();
+  StreamSubscription<void>? _shakeSubscription;
+  bool _isShakeDialogOpen = false;
   List<Product> _products = [];
   bool _isLoading = true;
   String _searchQuery = '';
@@ -104,12 +111,228 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     super.initState();
     _loadProducts();
     _startBannerAutoScroll();
+    _initShakeDetector();
   }
 
   @override
   void dispose() {
+    _shakeSubscription?.cancel();
+    _sensorService.dispose();
     _bannerController.dispose();
     super.dispose();
+  }
+
+  void _initShakeDetector() {
+    _shakeSubscription = _sensorService.getShakeStream().listen((_) {
+      if (mounted && ModalRoute.of(context)?.isCurrent == true && !_isShakeDialogOpen && _products.isNotEmpty) {
+        _handleShakeDetected();
+      }
+    });
+  }
+
+  void _handleShakeDetected() async {
+    if (_products.isEmpty || _isShakeDialogOpen) return;
+    _isShakeDialogOpen = true;
+    HapticFeedback.mediumImpact();
+
+    // Trigger refresh
+    _loadProducts();
+
+    // Pick a random surprise product
+    final randomProduct = _products[Random().nextInt(_products.length)];
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildShakeSurpriseSheet(randomProduct),
+    );
+
+    _isShakeDialogOpen = false;
+  }
+
+  Widget _buildShakeSurpriseSheet(Product product) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).padding.bottom + 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Container(
+            width: 44,
+            height: 5,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Shake Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.vibration, color: Colors.amber, size: 18),
+                SizedBox(width: 6),
+                Text(
+                  'SHAKE SURPRISE REFRESH! 🎉',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Katalog Telah Diperbarui!',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Berikut adalah rekomendasi produk kejutan khusus hasil guncangan ponselmu:',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 20),
+
+          // Product Card inside modal
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: 86,
+                    height: 86,
+                    color: Colors.grey[200],
+                    child: product.photoPath != null && product.photoPath!.isNotEmpty
+                        ? Image.file(
+                            File(product.photoPath!),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, err, stack) => const Icon(Icons.inventory_2, color: Color(0xFF1E3A8A), size: 36),
+                          )
+                        : const Icon(Icons.inventory_2, color: Color(0xFF1E3A8A), size: 36),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          product.category,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        product.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Rp ${_formatPrice(product.price)}',
+                        style: const TextStyle(
+                          color: Color(0xFF1E3A8A),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Buttons
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/user-detail', arguments: product.id);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF1E3A8A),
+                    side: const BorderSide(color: Color(0xFF1E3A8A), width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  child: const Text('Lihat Detail', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (product.stock <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Maaf, stok produk sedang habis')),
+                      );
+                      return;
+                    }
+                    _addToCart(product);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E3A8A),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 2,
+                  ),
+                  child: const Text('+ Keranjang', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   void _startBannerAutoScroll() {
@@ -159,7 +382,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               children: [
                 const Icon(Icons.check_circle, color: Colors.white, size: 18),
                 const SizedBox(width: 8),
-                Text('${product.name} ditambahkan ke keranjang'),
+                Expanded(
+                  child: Text(
+                    '${product.name} ditambahkan ke keranjang',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             backgroundColor: const Color(0xFF22C55E),
@@ -236,6 +465,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               ],
             ),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.vibration, color: Colors.amber),
+                tooltip: 'Shake to Refresh / Kejutan Produk',
+                onPressed: _handleShakeDetected,
+              ),
               IconButton(
                 icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                 onPressed: () =>
@@ -317,6 +551,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
                 // Banner Carousel
                 _buildBannerCarousel(),
+
+                // Shake Tip Banner
+                _buildShakeBannerTip(),
 
                 // Categories
                 _buildCategoriesSection(),
@@ -465,6 +702,72 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildShakeBannerTip() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _handleShakeDetected,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.vibration, color: Colors.amber, size: 22),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Shake to Refresh & Surprise! 🎉',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Goyangkan HP-mu (atau klik di sini) untuk memuat ulang & kejutan produk spesial!',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.white, size: 20),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

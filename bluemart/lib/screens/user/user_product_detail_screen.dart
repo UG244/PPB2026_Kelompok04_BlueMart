@@ -59,7 +59,13 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
               children: [
                 const Icon(Icons.check_circle, color: Colors.white, size: 18),
                 const SizedBox(width: 8),
-                Text('${_product!.name} added to cart'),
+                Expanded(
+                  child: Text(
+                    '${_product!.name} ditambahkan ke keranjang',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             backgroundColor: const Color(0xFF22C55E),

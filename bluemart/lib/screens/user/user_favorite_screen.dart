@@ -39,7 +39,13 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
               children: [
                 const Icon(Icons.check_circle, color: Colors.white, size: 18),
                 const SizedBox(width: 8),
-                Text('${product.name} added to cart'),
+                Expanded(
+                  child: Text(
+                    '${product.name} ditambahkan ke keranjang',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
             backgroundColor: const Color(0xFF22C55E),
