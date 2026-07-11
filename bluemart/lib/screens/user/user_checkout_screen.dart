@@ -426,13 +426,16 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildSectionTitle('Kode Promo'),
-                  TextButton.icon(
-                    onPressed: _showActivePromosBottomSheet,
-                    icon: const Icon(Icons.local_offer, size: 16, color: Color(0xFF1E3A8A)),
-                    label: const Text(
-                      'Lihat Promo & Voucher Aktif',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E3A8A)),
+                  Expanded(child: _buildSectionTitle('Kode Promo')),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: TextButton.icon(
+                      onPressed: _showActivePromosBottomSheet,
+                      icon: const Icon(Icons.local_offer, size: 16, color: Color(0xFF1E3A8A)),
+                      label: const Text(
+                        'Lihat Promo & Voucher Aktif',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E3A8A)),
+                      ),
                     ),
                   ),
                 ],
@@ -1373,12 +1376,14 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Promo & Voucher Aktif',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E3A8A),
+                const Expanded(
+                  child: Text(
+                    'Promo & Voucher Aktif',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E3A8A),
+                    ),
                   ),
                 ),
                 IconButton(

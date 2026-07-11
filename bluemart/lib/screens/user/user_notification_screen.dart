@@ -18,6 +18,11 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging || mounted) {
+        setState(() {});
+      }
+    });
     _loadNotifications();
   }
 
@@ -28,33 +33,61 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
     
     _allNotifications.clear();
     for (var notif in data) {
+      final title = (notif['title'] ?? '').toString();
+      final msg = (notif['message'] ?? '').toString();
+      String type = (notif['type'] ?? 'pesanan').toString();
+
+      // Smart classification based on keywords if type was generic
+      if (title.toLowerCase().contains('promo') ||
+          title.toLowerCase().contains('voucher') ||
+          title.toLowerCase().contains('diskon') ||
+          title.toLowerCase().contains('flash sale') ||
+          title.toLowerCase().contains('cashback') ||
+          msg.toLowerCase().contains('promo') ||
+          msg.toLowerCase().contains('voucher') ||
+          msg.toLowerCase().contains('diskon')) {
+        type = 'promo';
+      } else if (title.toLowerCase().contains('pesanan') ||
+          title.toLowerCase().contains('pembayaran') ||
+          title.toLowerCase().contains('kirim') ||
+          title.toLowerCase().contains('selesai')) {
+        type = 'pesanan';
+      }
+
       _allNotifications.add(_NotificationItem(
-        icon: notif['type'] == 'promo' ? Icons.discount : Icons.payment,
-        iconColor: notif['type'] == 'promo' ? const Color(0xFFF97316) : const Color(0xFF22C55E),
-        title: notif['title'] ?? '',
-        message: notif['message'] ?? '',
-        time: DateTime.parse(notif['timestamp']),
-        type: notif['type'] ?? 'pesanan',
+        icon: type == 'promo'
+            ? (title.toLowerCase().contains('voucher') ? Icons.card_giftcard : Icons.discount)
+            : (title.toLowerCase().contains('pembayaran') ? Icons.credit_card : Icons.local_shipping),
+        iconColor: type == 'promo'
+            ? (title.toLowerCase().contains('voucher') ? const Color(0xFFEC4899) : const Color(0xFFF97316))
+            : (title.toLowerCase().contains('selesai') ? const Color(0xFF22C55E) : (title.toLowerCase().contains('pembayaran') ? const Color(0xFF8B5CF6) : const Color(0xFF3B82F6))),
+        title: title,
+        message: msg,
+        time: DateTime.tryParse(notif['timestamp'] ?? '') ?? DateTime.now(),
+        type: type,
         isRead: notif['isRead'] ?? false,
       ));
     }
     
-    // Fallback if empty (keep dummy data for preview)
+    // Fallback if empty (keep rich sample data for preview)
     if (_allNotifications.isEmpty) {
       _generateSampleNotifications();
+    } else if (_allNotifications.length < 3) {
+      // If only 1-2 items from previous run, merge rich samples so both tabs have content
+      _generateSampleNotifications(onlyMissing: true);
     }
     
     setState(() => _isLoading = false);
   }
 
-  void _generateSampleNotifications() {
+  void _generateSampleNotifications({bool onlyMissing = false}) {
     final now = DateTime.now();
-    _allNotifications.addAll([
+    final samples = [
       _NotificationItem(
         icon: Icons.local_shipping,
         iconColor: const Color(0xFF3B82F6),
         title: 'Pesanan Dikirim',
-        message: 'Pesanan #123 sudah dikirim dan sedang dalam perjalanan.',
+        message: 'Pesanan #123 sudah dikirim dan sedang dalam perjalanan kurir ke alamat Anda.',
         time: now.subtract(const Duration(minutes: 5)),
         type: 'pesanan',
         isRead: false,
@@ -62,24 +95,60 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
       _NotificationItem(
         icon: Icons.discount,
         iconColor: const Color(0xFFF97316),
-        title: 'Promo Spesial!',
-        message: 'Diskon 50% Flash Sale hari ini. Buruan sebelum kehabisan!',
+        title: 'Promo Spesial Flash Sale!',
+        message: 'Diskon hingga 50% Flash Sale hari ini untuk produk sembako pilihan. Buruan sebelum kehabisan!',
         time: now.subtract(const Duration(hours: 1)),
         type: 'promo',
         isRead: false,
       ),
-    ]);
+      _NotificationItem(
+        icon: Icons.check_circle,
+        iconColor: const Color(0xFF22C55E),
+        title: 'Pesanan Selesai',
+        message: 'Terima kasih sudah berbelanja di BlueMart. Pesanan #456 telah tiba dan selesai.',
+        time: now.subtract(const Duration(days: 1)),
+        type: 'pesanan',
+        isRead: true,
+      ),
+      _NotificationItem(
+        icon: Icons.credit_card,
+        iconColor: const Color(0xFF8B5CF6),
+        title: 'Pembayaran Diterima',
+        message: 'Pembayaran Anda untuk pesanan #789 melalui QRIS telah berhasil diverifikasi sistem.',
+        time: now.subtract(const Duration(days: 2)),
+        type: 'pesanan',
+        isRead: true,
+      ),
+      _NotificationItem(
+        icon: Icons.card_giftcard,
+        iconColor: const Color(0xFFEC4899),
+        title: 'Voucher Baru Eksklusif!',
+        message: 'Dapatkan voucher potongan belanja Rp 50.000 gratis untuk pembelian minimal Rp 200.000.',
+        time: now.subtract(const Duration(days: 3)),
+        type: 'promo',
+        isRead: true,
+      ),
+    ];
+
+    if (!onlyMissing) {
+      _allNotifications.addAll(samples);
+    } else {
+      for (var s in samples) {
+        if (!_allNotifications.any((n) => n.title == s.title)) {
+          _allNotifications.add(s);
+        }
+      }
+      _allNotifications.sort((a, b) => b.time.compareTo(a.time));
+    }
   }
 
-  List<_NotificationItem> get _filteredNotifications {
-    switch (_tabController.index) {
-      case 1:
-        return _allNotifications.where((n) => n.type == 'pesanan').toList();
-      case 2:
-        return _allNotifications.where((n) => n.type == 'promo').toList();
-      default:
-        return _allNotifications;
+  List<_NotificationItem> _getFilteredList(String tabType) {
+    if (tabType == 'pesanan') {
+      return _allNotifications.where((n) => n.type == 'pesanan').toList();
+    } else if (tabType == 'promo') {
+      return _allNotifications.where((n) => n.type == 'promo').toList();
     }
+    return _allNotifications;
   }
 
   void _markAllRead() {
@@ -90,7 +159,7 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Semua notifikasi telah dibaca'),
+        content: Text('Semua notifikasi telah ditandai dibaca'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -123,9 +192,9 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
-          indicatorWeight: 3,
+          indicatorWeight: 3.5,
           labelColor: Colors.white,
-          unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
+          unselectedLabelColor: Colors.white.withValues(alpha: 0.65),
           tabs: [
             Tab(
               child: Row(
@@ -154,17 +223,76 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
                 ],
               ),
             ),
-            const Tab(text: 'Pesanan'),
-            const Tab(text: 'Promo'),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Pesanan'),
+                  if (_allNotifications.any((n) => !n.isRead && n.type == 'pesanan'))
+                    Container(
+                      margin: const EdgeInsets.only(left: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${_allNotifications.where((n) => !n.isRead && n.type == 'pesanan').length}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Promo'),
+                  if (_allNotifications.any((n) => !n.isRead && n.type == 'promo'))
+                    Container(
+                      margin: const EdgeInsets.only(left: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${_allNotifications.where((n) => !n.isRead && n.type == 'promo').length}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
-      body: _buildNotificationList(),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildNotificationList('semua'),
+          _buildNotificationList('pesanan'),
+          _buildNotificationList('promo'),
+        ],
+      ),
     );
   }
 
-  Widget _buildNotificationList() {
-    final notifications = _filteredNotifications;
+  Widget _buildNotificationList(String tabType) {
+    final notifications = _getFilteredList(tabType);
     if (notifications.isEmpty) {
       return Center(
         child: Column(

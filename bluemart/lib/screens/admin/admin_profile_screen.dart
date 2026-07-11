@@ -121,7 +121,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: Color(0xFF1E3A8A),
                       ),
                     ),
                     IconButton(
@@ -191,7 +191,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(Icons.help_center, color: Color(0xFF0F172A)),
+            Icon(Icons.help_center, color: Color(0xFF1E3A8A)),
             SizedBox(width: 8),
             Expanded(child: Text('Panduan Pengelola Toko')),
           ],
@@ -230,14 +230,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF0F172A))),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A))),
       );
     }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         title: const Text('Profil & Pengaturan Admin', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -258,7 +258,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)],
+                  colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6), Color(0xFF0EA5E9)],
                 ),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
               ),
@@ -268,13 +268,13 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     width: 70,
                     height: 70,
                     decoration: BoxDecoration(
-                      color: Colors.amber[400],
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 10),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 10),
                       ],
                     ),
-                    child: const Icon(Icons.admin_panel_settings, size: 40, color: Color(0xFF0F172A)),
+                    child: const Icon(Icons.admin_panel_settings, size: 40, color: Color(0xFF1E3A8A)),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -633,7 +633,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           ),
           Switch(
             value: value,
-            activeTrackColor: const Color(0xFF0F172A),
+            activeTrackColor: const Color(0xFF1E3A8A),
             onChanged: isEnabled && onChanged != null ? (val) => onChanged(val) : null,
           ),
         ],

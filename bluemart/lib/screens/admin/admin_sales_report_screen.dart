@@ -515,7 +515,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         title: const Text('Laporan & Analisis Penjualan', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -538,10 +538,10 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0F172A)))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E3A8A)))
           : RefreshIndicator(
               onRefresh: _loadTransactions,
-              color: const Color(0xFF0F172A),
+              color: const Color(0xFF1E3A8A),
               child: CustomScrollView(
                 slivers: [
                   // Top Summary Bar
@@ -552,7 +552,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)],
+                          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6), Color(0xFF0EA5E9)],
                         ),
                         borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
                       ),
@@ -776,18 +776,24 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF0F172A) : Colors.transparent,
+          color: isSelected ? const Color(0xFF1E3A8A) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
-        child: Text(
-          title,
-          style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFF64748B),
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-            fontSize: 13,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF64748B),
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
           ),
         ),
       ),
@@ -801,7 +807,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(14),
@@ -811,22 +817,24 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
         children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              title,
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 10),
+            ),
           ),
         ],
       ),
@@ -889,7 +897,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                   final week = d['week'] as String;
                   final shortLabel = d['shortLabel'] as String? ?? week;
                   final heightRatio = rev / maxRev;
-                  final barHeight = math.max(heightRatio * 150.0, 16.0);
+                  final barHeight = rev == 0 ? 4.0 : math.max(heightRatio * 150.0, 18.0);
 
                   return Expanded(
                     child: Padding(
@@ -905,7 +913,11 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                                   rev >= 1000000
                                       ? '${(rev / 1000000).toStringAsFixed(1)}Jt'
                                       : (rev >= 1000 ? '${(rev / 1000).toStringAsFixed(0)}Rbi' : _formatPrice(rev)),
-                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: rev > 0 ? FontWeight.bold : FontWeight.w500,
+                                    color: rev > 0 ? const Color(0xFF1E3A8A) : Colors.grey[400],
+                                  ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -915,11 +927,14 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                                   curve: Curves.easeOutCubic,
                                   height: barHeight,
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      begin: Alignment.bottomCenter,
-                                      end: Alignment.topCenter,
-                                      colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-                                    ),
+                                    gradient: rev > 0
+                                        ? const LinearGradient(
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                            colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                                          )
+                                        : null,
+                                    color: rev == 0 ? const Color(0xFFE2E8F0) : null,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
@@ -927,17 +942,18 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            shortLabel,
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                            maxLines: 2,
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.ellipsis,
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              shortLabel.replaceAll('\n', ' '),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             '$orders Ord',
-                            style: TextStyle(fontSize: 9, color: Colors.grey[500]),
+                            style: TextStyle(fontSize: 10, color: Colors.grey[500]),
                           ),
                         ],
                       ),
@@ -981,7 +997,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
             children: [
               Icon(Icons.pie_chart, color: Color(0xFFF97316), size: 22),
               SizedBox(width: 8),
-              Text('Diagram Komposisi Status Pesanan', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              Expanded(child: Text('Diagram Komposisi Status Pesanan', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
             ],
           ),
           const SizedBox(height: 4),
@@ -997,13 +1013,13 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                   flex: 5,
                   child: Center(
                     child: SizedBox(
-                      width: 140,
-                      height: 140,
+                      width: 125,
+                      height: 125,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
                           CustomPaint(
-                            size: const Size(140, 140),
+                            size: const Size(125, 125),
                             painter: _OrderStatusPiePainter(counts: counts, total: total),
                           ),
                           Column(
@@ -1011,7 +1027,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                             children: [
                               Text(
                                 '$total',
-                                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
                               ),
                               Text('Transaksi', style: TextStyle(fontSize: 10, color: Colors.grey[600])),
                             ],
@@ -1021,7 +1037,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 // Legend list
                 Expanded(
                   flex: 6,
@@ -1035,7 +1051,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
                       final pct = total > 0 ? (cnt / total * 100).toStringAsFixed(0) : '0';
 
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(vertical: 5),
                         child: Row(
                           children: [
                             Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
@@ -1187,15 +1203,15 @@ class _OrderStatusPiePainter extends CustomPainter {
       final paint = Paint()
         ..color = Colors.grey[200]!
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 22;
-      canvas.drawCircle(Offset(size.width / 2, size.height / 2), size.width / 2 - 12, paint);
+        ..strokeWidth = 16;
+      canvas.drawCircle(Offset(size.width / 2, size.height / 2), size.width / 2 - 10, paint);
       return;
     }
 
-    final rect = Rect.fromLTWH(12, 12, size.width - 24, size.height - 24);
+    final rect = Rect.fromLTWH(10, 10, size.width - 20, size.height - 20);
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 22
+      ..strokeWidth = 16
       ..strokeCap = StrokeCap.butt;
 
     double startAngle = -math.pi / 2;

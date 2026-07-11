@@ -213,7 +213,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           children: [
             Icon(Icons.discount, color: Color(0xFF1E3A8A)),
             SizedBox(width: 8),
-            Text('Promo & Voucher Aktif'),
+            Expanded(
+              child: Text(
+                'Promo & Voucher Aktif',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+            ),
           ],
         ),
         content: SizedBox(
